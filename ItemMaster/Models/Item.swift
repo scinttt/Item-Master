@@ -34,6 +34,9 @@ final class Item {
     // 标签（多对多）
     var tags: [Tag]
 
+    // 图片
+    var imageFilename: String?
+
     // 描述
     var notes: String?
 
@@ -80,6 +83,7 @@ final class Item {
         expiryDate: Date? = nil,
         shelfLifeDays: Int? = nil,
         restockIntervalDays: Int? = nil,
+        imageFilename: String? = nil,
         notes: String? = nil,
         tags: [Tag] = []
     ) {
@@ -99,6 +103,7 @@ final class Item {
         self.restockIntervalDays = restockIntervalDays
         self.lastRestockedDate = Date()
         self.isRestockNotified = false
+        self.imageFilename = imageFilename
         self.notes = notes
         self.tags = tags
         self.createdAt = Date()

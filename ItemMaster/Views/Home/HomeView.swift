@@ -6,6 +6,9 @@ struct HomeView: View {
     @Query(sort: \Category.name) private var categories: [Category]
     @Query(sort: \Item.createdAt, order: .reverse) private var allItems: [Item]
     @State private var searchText = ""
+    @State private var isAddingCategory = false
+    @State private var newCategoryName = ""
+    @State private var showAddItem = false
 
     private var searchResults: [Item] {
         let trimmed = searchText.trimmingCharacters(in: .whitespaces)
@@ -45,17 +48,47 @@ struct HomeView: View {
                             }
                         }
                     }
+
+                    // Inline add category
+                    if isAddingCategory {
+                        TextField("分类名称", text: $newCategoryName)
+                            .onSubmit {
+                                saveNewCategory()
+                            }
+                    } else {
+                        Button {
+                            isAddingCategory = true
+                        } label: {
+                            Label("添加分类", systemImage: "plus")
+                                .foregroundStyle(.tint)
+                        }
+                    }
                 }
             }
             .navigationTitle("分类")
             .searchable(text: $searchText, prompt: "搜索物品名称 / 标签")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: AddItemView()) {
+                    Button {
+                        showAddItem = true
+                    } label: {
                         Image(systemName: "plus")
                     }
                 }
             }
+            .sheet(isPresented: $showAddItem) {
+                AddItemView()
+            }
         }
+    }
+
+    private func saveNewCategory() {
+        let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty {
+            let category = Category(name: trimmed)
+            modelContext.insert(category)
+        }
+        newCategoryName = ""
+        isAddingCategory = false
     }
 }
