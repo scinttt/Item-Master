@@ -10,7 +10,7 @@ struct ContentView: View {
 
             DashboardView()
                 .tabItem {
-                    Label("图表", systemImage: "chart.pie")
+                    Label("统计", systemImage: "chart.pie")
                 }
         }
     }
