@@ -2,11 +2,21 @@ import SwiftUI
 import SwiftData
 
 struct SubcategoryItemsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var items: [Item]
     let subcategory: Subcategory
+
+    init(subcategory: Subcategory) {
+        self.subcategory = subcategory
+        let subcategoryID = subcategory.id
+        _items = Query(filter: #Predicate<Item> { item in
+            item.subcategory?.id == subcategoryID
+        })
+    }
 
     /// 排序后的物品列表：临期优先 → 无日期按最近添加
     private var sortedItems: [Item] {
-        subcategory.items.sorted { a, b in
+        items.sorted { a, b in
             switch (a.expiryDate, b.expiryDate) {
             case let (dateA?, dateB?):
                 return dateA < dateB
@@ -30,8 +40,20 @@ struct SubcategoryItemsView: View {
                         ItemRowView(item: item)
                     }
                 }
+                .onDelete(perform: deleteItems)
             }
         }
         .navigationTitle(subcategory.name)
+    }
+
+    private func deleteItems(at offsets: IndexSet) {
+        for index in offsets {
+            let item = sortedItems[index]
+            if let filename = item.imageFilename {
+                ImageStorage.delete(filename: filename)
+            }
+            modelContext.delete(item)
+        }
+        try? modelContext.save()
     }
 }

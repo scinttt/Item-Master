@@ -26,6 +26,8 @@ struct ItemMasterApp: App {
             ContentView()
                 .onAppear {
                     seedDefaultDataIfNeeded()
+                    // 打印 Documents 文件夹的本地物理路径
+                    print("📁 沙盒路径: \(URL.documentsDirectory.path())")
                 }
         }
         .modelContainer(sharedModelContainer)
