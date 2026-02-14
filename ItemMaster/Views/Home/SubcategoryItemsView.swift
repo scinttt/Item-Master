@@ -5,6 +5,8 @@ struct SubcategoryItemsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
     let subcategory: Subcategory
+    
+    @State private var sortOption: Constants.SortOption = .expiryDate
 
     init(subcategory: Subcategory) {
         self.subcategory = subcategory
@@ -14,18 +16,29 @@ struct SubcategoryItemsView: View {
         })
     }
 
-    /// 排序后的物品列表：临期优先 → 无日期按最近添加
+    /// 排序逻辑：
+    /// 默认(expiryDate): 临期优先 -> 无日期按最近添加
+    /// 其他: 按选定维度降序
     private var sortedItems: [Item] {
         items.sorted { a, b in
-            switch (a.expiryDate, b.expiryDate) {
-            case let (dateA?, dateB?):
-                return dateA < dateB
-            case (_?, nil):
-                return true
-            case (nil, _?):
-                return false
-            case (nil, nil):
-                return a.createdAt > b.createdAt
+            switch sortOption {
+            case .expiryDate:
+                switch (a.expiryDate, b.expiryDate) {
+                case let (dateA?, dateB?):
+                    return dateA < dateB
+                case (_?, nil):
+                    return true
+                case (nil, _?):
+                    return false
+                case (nil, nil):
+                    return a.createdAt > b.createdAt
+                }
+            case .unitPrice:
+                return (a.unitPrice ?? 0) > (b.unitPrice ?? 0)
+            case .acquiredDate:
+                return (a.acquiredDate ?? .distantPast) > (b.acquiredDate ?? .distantPast)
+            case .quantity:
+                return a.quantity > b.quantity
             }
         }
     }
@@ -44,6 +57,19 @@ struct SubcategoryItemsView: View {
             }
         }
         .navigationTitle(subcategory.name)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("排序方式", selection: $sortOption) {
+                        ForEach(Constants.SortOption.allCases) { option in
+                            Text(option.rawValue).tag(option)
+                        }
+                    }
+                } label: {
+                    Label("排序", systemImage: "arrow.up.arrow.down")
+                }
+            }
+        }
     }
 
     private func deleteItems(at offsets: IndexSet) {
