@@ -8,7 +8,7 @@ final class Tag {
     var id: UUID
     var name: String
 
-    @Relationship(deleteRule: .nullify)
+    @Relationship(deleteRule: .nullify, inverse: \Item.tags)
     var items: [Item]
 
     init(name: String) {
