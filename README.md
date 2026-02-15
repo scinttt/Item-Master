@@ -60,7 +60,7 @@ ItemMaster/
 
 | Category List | Item Details | Statistics |
 | :---: | :---: | :---: |
-| ![Home](https://via.placeholder.com/150x300) | ![Detail](https://via.placeholder.com/150x300) | ![Stats](https://via.placeholder.com/150x300) |
+| ![Home](screenshots/category.PNG) | ![Detail](screenshots/item.PNG) | ![Stats](screenshots/statistic.PNG) |
 
 ## 🤝 Contributing
 
