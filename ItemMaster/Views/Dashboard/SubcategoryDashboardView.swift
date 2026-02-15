@@ -6,7 +6,19 @@ struct SubcategoryDashboardView: View {
     let category: Category
     @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
     @Query private var items: [Item]
-    @State private var viewModel = DashboardViewModel()
+    @State private var viewModel: DashboardViewModel
+
+    init(category: Category, initialSegment: Int) {
+        self.category = category
+        let categoryID = category.id
+        _items = Query(filter: #Predicate<Item> { item in
+            item.category.id == categoryID
+        })
+        
+        let vm = DashboardViewModel()
+        vm.selectedSegment = initialSegment
+        _viewModel = State(initialValue: vm)
+    }
 
     private struct SubcategoryStat: Identifiable {
         var id: String { name }

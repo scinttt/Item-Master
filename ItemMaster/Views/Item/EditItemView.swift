@@ -12,6 +12,7 @@ struct EditItemView: View {
     let item: Item
     
     // MARK: - Form State
+    @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
     @State private var name: String
     @State private var quantity: Int
     @State private var unitPriceString: String
@@ -52,7 +53,14 @@ struct EditItemView: View {
         _name = State(initialValue: item.name)
         _quantity = State(initialValue: item.quantity)
         _unitPriceString = State(initialValue: item.unitPrice.map { "\($0)" } ?? "")
-        _selectedCurrency = State(initialValue: Constants.Currency(rawValue: item.originalCurrency) ?? .usd)
+        
+        // 如果物品还没有 originalCurrency，则使用全局偏好
+        let initialCurrencyString = item.originalCurrency.isEmpty ? 
+            (UserDefaults.standard.string(forKey: "globalDisplayCurrency") ?? Constants.Currency.usd.rawValue) : 
+            item.originalCurrency
+        
+        _selectedCurrency = State(initialValue: Constants.Currency(rawValue: initialCurrencyString) ?? .usd)
+        
         _acquiredDate = State(initialValue: item.acquiredDate)
         _expiryDate = State(initialValue: item.expiryDate)
         _shelfLifeDaysString = State(initialValue: item.shelfLifeDays.map { "\($0)" } ?? "")

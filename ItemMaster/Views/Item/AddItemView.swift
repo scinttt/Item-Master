@@ -10,10 +10,11 @@ struct AddItemView: View {
     @Query(sort: \Location.name) private var locations: [Location]
 
     // MARK: - Form State
+    @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
     @State private var name = ""
     @State private var quantity = 1
     @State private var unitPriceString = ""
-    @State private var selectedCurrency: Constants.Currency = .usd
+    @State private var selectedCurrency: Constants.Currency
     @State private var acquiredDate: Date?
     @State private var expiryDate: Date?
     @State private var shelfLifeDaysString = ""
@@ -21,6 +22,12 @@ struct AddItemView: View {
     @State private var notes = ""
     @State private var tagInput = ""
     @State private var tagNames: [String] = []
+
+    init() {
+        // 直接从 UserDefaults 读取，因为在 init 阶段 AppStorage 可能还没准备好
+        let initialCurrency = UserDefaults.standard.string(forKey: "globalDisplayCurrency") ?? Constants.Currency.usd.rawValue
+        _selectedCurrency = State(initialValue: Constants.Currency(rawValue: initialCurrency) ?? .usd)
+    }
 
     // Category
     @State private var selectedCategory: Category?

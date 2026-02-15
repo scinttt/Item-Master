@@ -86,7 +86,7 @@ struct DashboardView: View {
                                     .padding(.bottom, 8)
 
                                 ForEach(chartData) { stat in
-                                    NavigationLink(destination: SubcategoryDashboardView(category: stat.category)) {
+                                    NavigationLink(destination: SubcategoryDashboardView(category: stat.category, initialSegment: viewModel.selectedSegment)) {
                                         HStack {
                                             Circle()
                                                 .fill(Color.accentColor)
