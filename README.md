@@ -7,12 +7,6 @@
 
 **ItemMaster** is a modern, minimalist household inventory management application designed to help you track everything you own. Built entirely with **SwiftUI** and powered by **SwiftData**, it offers a seamless experience for monitoring expiry dates, categorizing supplies, and visualizing your consumption.
 
-<p align="center">
-  <img src="https://via.placeholder.com/200x400?text=Category+View" width="200" alt="Category View" />
-  <img src="https://via.placeholder.com/200x400?text=Item+Detail" width="200" alt="Item Detail" />
-  <img src="https://via.placeholder.com/200x400?text=Statistics" width="200" alt="Statistics" />
-</p>
-
 ## ✨ Features
 
 - [x] **Smart Categorization**: Organise items with a flexible two-level category system.
