@@ -91,7 +91,7 @@ struct ItemMasterApp: App {
         let calendar = Calendar.current
         
         // 示例 1: 临期食物
-        context.insert(Item(
+        let milk = Item(
             name: "全脂鲜牛奶",
             category: foodCat,
             location: kitchenLoc,
@@ -102,10 +102,12 @@ struct ItemMasterApp: App {
             originalCurrency: "CNY",
             expiryDate: calendar.date(byAdding: .day, value: 3, to: Date()), // 3天后过期
             notes: "测试临期提醒"
-        ))
+        )
+        context.insert(milk)
+        foodCat.items.append(milk)
         
         // 示例 2: 昂贵电子产品
-        context.insert(Item(
+        let iphone = Item(
             name: "iPhone 15 Pro",
             category: techCat,
             location: studyLoc,
@@ -115,10 +117,12 @@ struct ItemMasterApp: App {
             originalCurrency: "USD",
             acquiredDate: calendar.date(byAdding: .month, value: -3, to: Date()),
             notes: "测试美元换算和图表价值"
-        ))
+        )
+        context.insert(iphone)
+        techCat.items.append(iphone)
         
         // 示例 3: 低库存日用品
-        context.insert(Item(
+        let tissue = Item(
             name: "抽纸",
             category: dailyCat,
             location: studyLoc,
@@ -127,6 +131,8 @@ struct ItemMasterApp: App {
             minQuantity: 5.0, // 触发补货
             unitPrice: 2.0,
             originalCurrency: "CNY"
-        ))
+        )
+        context.insert(tissue)
+        dailyCat.items.append(tissue)
     }
 }
