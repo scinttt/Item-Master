@@ -31,7 +31,7 @@ struct ItemRowView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text("×\(item.quantity)")
+                Text("×\(QuantityHelper.format(item.quantity))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 

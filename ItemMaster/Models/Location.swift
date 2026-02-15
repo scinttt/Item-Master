@@ -7,6 +7,8 @@ import SwiftData
 final class Location {
     var id: UUID
     var name: String
+    var iconName: String? // 预留图标字段
+    var coordinatesData: String? // 预留户型图坐标数据 (JSON)
     var isDefault: Bool
 
     @Relationship(deleteRule: .cascade)
@@ -15,9 +17,10 @@ final class Location {
     @Relationship(deleteRule: .nullify)
     var items: [Item]
 
-    init(name: String, isDefault: Bool = false) {
+    init(name: String, iconName: String? = nil, isDefault: Bool = false) {
         self.id = UUID()
         self.name = name
+        self.iconName = iconName
         self.isDefault = isDefault
         self.sublocations = []
         self.items = []
@@ -31,15 +34,18 @@ final class Location {
 final class Sublocation {
     var id: UUID
     var name: String
+    var iconName: String? // 预留图标字段
+    var coordinatesData: String? // 预留户型图坐标数据 (JSON)
 
     var parentLocation: Location?
 
     @Relationship(deleteRule: .nullify)
     var items: [Item]
 
-    init(name: String, parentLocation: Location? = nil) {
+    init(name: String, iconName: String? = nil, parentLocation: Location? = nil) {
         self.id = UUID()
         self.name = name
+        self.iconName = iconName
         self.parentLocation = parentLocation
         self.items = []
     }

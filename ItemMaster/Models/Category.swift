@@ -8,6 +8,7 @@ import SwiftData
 final class Category {
     var id: UUID
     var name: String
+    var iconName: String? // 预留图标字段
     var isDefault: Bool
 
     @Relationship(deleteRule: .cascade)
@@ -16,9 +17,10 @@ final class Category {
     @Relationship(deleteRule: .nullify)
     var items: [Item]
 
-    init(name: String, isDefault: Bool = false) {
+    init(name: String, iconName: String? = nil, isDefault: Bool = false) {
         self.id = UUID()
         self.name = name
+        self.iconName = iconName
         self.isDefault = isDefault
         self.subcategories = []
         self.items = []
@@ -32,15 +34,17 @@ final class Category {
 final class Subcategory {
     var id: UUID
     var name: String
+    var iconName: String? // 预留图标字段
 
     var parentCategory: Category?
 
     @Relationship(deleteRule: .nullify)
     var items: [Item]
 
-    init(name: String, parentCategory: Category? = nil) {
+    init(name: String, iconName: String? = nil, parentCategory: Category? = nil) {
         self.id = UUID()
         self.name = name
+        self.iconName = iconName
         self.parentCategory = parentCategory
         self.items = []
     }

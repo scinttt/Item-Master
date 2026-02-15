@@ -14,7 +14,7 @@ struct EditItemView: View {
     // MARK: - Form State
     @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
     @State private var name: String
-    @State private var quantity: Int
+    @State private var quantity: Double
     @State private var unitPriceString: String
     @State private var selectedCurrency: Constants.Currency
     @State private var acquiredDate: Date?
@@ -173,7 +173,16 @@ struct EditItemView: View {
         Section("基本信息") {
             TextField("名称", text: $name)
             
-            Stepper("数量: \(quantity)", value: $quantity, in: 0...9999)
+            HStack {
+                Text("数量")
+                Spacer()
+                TextField("", value: $quantity, format: .number.precision(.fractionLength(0...2)))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 80)
+                Stepper("", value: $quantity, in: 0...9999, step: 1)
+                    .labelsHidden()
+            }
             
             HStack {
                 Text("单价")

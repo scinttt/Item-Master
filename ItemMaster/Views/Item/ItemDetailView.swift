@@ -114,7 +114,7 @@ struct ItemDetailView: View {
             Group {
                 let categoryValue = item.category.name + (item.subcategory.map { " > \($0.name)" } ?? "")
                 detailRow(label: "分类", value: categoryValue)
-                detailRow(label: "数量", value: "\(item.quantity)")
+                detailRow(label: "数量", value: QuantityHelper.format(item.quantity))
                 
                 if let location = item.location {
                     let locationValue = location.name + (item.sublocation.map { " > \($0.name)" } ?? "")
