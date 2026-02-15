@@ -7,6 +7,15 @@ struct CategoryDetailView: View {
     @State private var isAddingSubcategory = false
     @State private var newSubcategoryName = ""
     @State private var showAddItem = false
+    
+    // Rename and Delete state
+    @State private var subcategoryToRename: Subcategory?
+    @State private var renameInput = ""
+    @State private var showRenameAlert = false
+    
+    @State private var subcategoryToDelete: Subcategory?
+    @State private var showDeleteRestrictedAlert = false
+    @State private var showDeleteConfirmAlert = false
 
     var body: some View {
         List {
@@ -20,6 +29,20 @@ struct CategoryDetailView: View {
                                 Text("\(subcategory.items.count)")
                                     .foregroundStyle(.secondary)
                             }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                prepareDelete(subcategory)
+                            } label: {
+                                Label("删除", systemImage: "trash")
+                            }
+                            
+                            Button {
+                                prepareRename(subcategory)
+                            } label: {
+                                Label("编辑", systemImage: "pencil")
+                            }
+                            .tint(.orange)
                         }
                     }
                 }
@@ -62,6 +85,30 @@ struct CategoryDetailView: View {
         .sheet(isPresented: $showAddItem) {
             AddItemView(initialCategory: category)
         }
+        .alert("重命名二级分类", isPresented: $showRenameAlert) {
+            TextField("新名称", text: $renameInput)
+            Button("取消", role: .cancel) {}
+            Button("保存") {
+                if let subcategory = subcategoryToRename {
+                    subcategory.name = renameInput.trimmingCharacters(in: .whitespaces)
+                }
+            }
+        }
+        .alert("无法删除", isPresented: $showDeleteRestrictedAlert) {
+            Button("我知道了", role: .cancel) {}
+        } message: {
+            Text("该分类下仍有物品。请先将物品清空，然后再尝试删除。")
+        }
+        .alert("确认删除", isPresented: $showDeleteConfirmAlert) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                if let subcategory = subcategoryToDelete {
+                    modelContext.delete(subcategory)
+                }
+            }
+        } message: {
+            Text("您确定要删除这个空分类吗？")
+        }
     }
 
     private func saveNewSubcategory() {
@@ -73,5 +120,20 @@ struct CategoryDetailView: View {
         }
         newSubcategoryName = ""
         isAddingSubcategory = false
+    }
+    
+    private func prepareRename(_ subcategory: Subcategory) {
+        subcategoryToRename = subcategory
+        renameInput = subcategory.name
+        showRenameAlert = true
+    }
+    
+    private func prepareDelete(_ subcategory: Subcategory) {
+        subcategoryToDelete = subcategory
+        if !subcategory.items.isEmpty {
+            showDeleteRestrictedAlert = true
+        } else {
+            showDeleteConfirmAlert = true
+        }
     }
 }

@@ -51,67 +51,74 @@ struct DashboardView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 20) {
-                            // Pie Chart
+                            // Donut Chart
                             Chart(chartData) { stat in
                                 SectorMark(
                                     angle: .value("数值", stat.value),
-                                    innerRadius: .ratio(0.6),
-                                    angularInset: 1.5
+                                    innerRadius: .ratio(0.65),
+                                    angularInset: 2.0
                                 )
-                                .cornerRadius(5)
+                                .cornerRadius(8)
                                 .foregroundStyle(by: .value("分类", stat.category.name))
                             }
-                            .frame(height: 250)
+                            .frame(height: 280)
                             .padding()
                             .chartBackground { chartProxy in
                                 GeometryReader { geometry in
                                     let frame = geometry[chartProxy.plotAreaFrame]
-                                    VStack(spacing: 0) {
-                                        Text(viewModel.selectedSegment == 0 ? "总量" : "总价")
-                                            .font(.caption)
+                                    VStack(spacing: 4) {
+                                        Text(viewModel.centerTitle)
+                                            .font(.subheadline)
                                             .foregroundStyle(.secondary)
                                         Text(viewModel.formatValue(totalValue))
-                                            .font(.headline)
+                                            .font(.title2)
                                             .bold()
+                                            .multilineTextAlignment(.center)
                                     }
                                     .position(x: frame.midX, y: frame.midY)
                                 }
                             }
 
                             // List
-                            VStack(alignment: .leading, spacing: 0) {
+                            VStack(alignment: .leading, spacing: 12) {
                                 Text("分类明细")
                                     .font(.headline)
                                     .padding(.horizontal)
-                                    .padding(.bottom, 8)
 
                                 ForEach(chartData) { stat in
                                     NavigationLink(destination: SubcategoryDashboardView(category: stat.category, initialSegment: viewModel.selectedSegment)) {
-                                        HStack {
+                                        HStack(spacing: 12) {
                                             Circle()
                                                 .fill(Color.accentColor)
-                                                .frame(width: 8, height: 8)
+                                                .frame(width: 10, height: 10)
                                             
-                                            Text(stat.category.name)
-                                                .foregroundStyle(.primary)
+                                            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                                                Text(stat.category.name)
+                                                    .font(.body)
+                                                    .foregroundStyle(.primary)
+                                                Text("(\(viewModel.calculatePercentage(value: stat.value, total: totalValue)))")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
                                             
                                             Spacer()
                                             
                                             Text(viewModel.formatValue(stat.value))
+                                                .font(.subheadline)
                                                 .foregroundStyle(.secondary)
                                             
                                             Image(systemName: "chevron.right")
-                                                .font(.caption)
+                                                .font(.caption2)
                                                 .foregroundStyle(.tertiary)
                                         }
                                         .padding()
-                                        .background(Color(.secondarySystemBackground).opacity(0.5))
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .background(Color(.secondarySystemBackground).opacity(0.6))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
                                         .padding(.horizontal)
-                                        .padding(.vertical, 4)
                                     }
                                 }
                             }
+                            .padding(.bottom, 20)
                         }
                     }
                 }

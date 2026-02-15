@@ -23,12 +23,29 @@ final class DashboardViewModel {
         }
     }
     
+    /// 计算百分比字符串，带有防崩溃处理
+    func calculatePercentage(value: Double, total: Double) -> String {
+        guard total > 0 else { return "0.0%" }
+        let percentage = (value / total) * 100
+        return String(format: "%.1f%%", percentage)
+    }
+    
     /// 格式化数值显示
     func formatValue(_ value: Double) -> String {
         if selectedSegment == 0 {
-            return "\(Int(value))"
+            // 数量格式化，如果是整数则不带小数点
+            if value == floor(value) {
+                return "\(Int(value))"
+            } else {
+                return String(format: "%.2f", value)
+            }
         } else {
             return CurrencyHelper.format(value, to: displayCurrency)
         }
+    }
+    
+    /// 环形图中心标题
+    var centerTitle: String {
+        selectedSegment == 0 ? "总数量" : "总价值"
     }
 }
