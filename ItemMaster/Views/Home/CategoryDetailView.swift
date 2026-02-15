@@ -7,6 +7,7 @@ struct CategoryDetailView: View {
     @State private var isAddingSubcategory = false
     @State private var newSubcategoryName = ""
     @State private var showAddItem = false
+    @FocusState private var isTextFieldFocused: Bool
     
     // Rename and Delete state
     @State private var subcategoryToRename: Subcategory?
@@ -52,12 +53,19 @@ struct CategoryDetailView: View {
             Section {
                 if isAddingSubcategory {
                     TextField("二级分类名称", text: $newSubcategoryName)
+                        .focused($isTextFieldFocused)
                         .onSubmit {
                             saveNewSubcategory()
+                        }
+                        .onChange(of: isTextFieldFocused) { _, isFocused in
+                            if !isFocused && isAddingSubcategory {
+                                saveNewSubcategory()
+                            }
                         }
                 } else {
                     Button {
                         isAddingSubcategory = true
+                        isTextFieldFocused = true
                     } label: {
                         Label("添加二级分类", systemImage: "plus")
                             .foregroundStyle(.tint)

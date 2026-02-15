@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var isAddingCategory = false
     @State private var newCategoryName = ""
     @State private var showAddItem = false
+    @FocusState private var isTextFieldFocused: Bool
     
     @State private var showRateAlert = false
     @State private var rateInput = ""
@@ -81,12 +82,19 @@ struct HomeView: View {
                     // Inline add category
                     if isAddingCategory {
                         TextField("分类名称", text: $newCategoryName)
+                            .focused($isTextFieldFocused)
                             .onSubmit {
                                 saveNewCategory()
+                            }
+                            .onChange(of: isTextFieldFocused) { _, isFocused in
+                                if !isFocused && isAddingCategory {
+                                    saveNewCategory()
+                                }
                             }
                     } else {
                         Button {
                             isAddingCategory = true
+                            isTextFieldFocused = true
                         } label: {
                             Label("添加分类", systemImage: "plus")
                                 .foregroundStyle(.tint)

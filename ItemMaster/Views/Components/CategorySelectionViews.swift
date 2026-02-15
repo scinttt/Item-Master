@@ -9,6 +9,7 @@ struct CategorySelectionView: View {
 
     @State private var isAdding = false
     @State private var newName = ""
+    @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
         List {
@@ -32,7 +33,13 @@ struct CategorySelectionView: View {
             if isAdding {
                 HStack {
                     TextField("新分类名称", text: $newName)
+                        .focused($isTextFieldFocused)
                         .onSubmit { saveNew() }
+                        .onChange(of: isTextFieldFocused) { _, isFocused in
+                            if !isFocused && isAdding {
+                                saveNew()
+                            }
+                        }
                     Button("取消") {
                         newName = ""
                         isAdding = false
@@ -42,6 +49,7 @@ struct CategorySelectionView: View {
             } else {
                 Button {
                     isAdding = true
+                    isTextFieldFocused = true
                 } label: {
                     Label("添加分类", systemImage: "plus")
                         .foregroundStyle(.tint)
@@ -72,6 +80,7 @@ struct SubcategorySelectionView: View {
 
     @State private var isAdding = false
     @State private var newName = ""
+    @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
         List {
@@ -95,7 +104,13 @@ struct SubcategorySelectionView: View {
             if isAdding {
                 HStack {
                     TextField("新二级分类名称", text: $newName)
+                        .focused($isTextFieldFocused)
                         .onSubmit { saveNew() }
+                        .onChange(of: isTextFieldFocused) { _, isFocused in
+                            if !isFocused && isAdding {
+                                saveNew()
+                            }
+                        }
                     Button("取消") {
                         newName = ""
                         isAdding = false
@@ -105,6 +120,7 @@ struct SubcategorySelectionView: View {
             } else {
                 Button {
                     isAdding = true
+                    isTextFieldFocused = true
                 } label: {
                     Label("添加二级分类", systemImage: "plus")
                         .foregroundStyle(.tint)
