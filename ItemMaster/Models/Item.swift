@@ -20,6 +20,7 @@ final class Item {
 
     // 价格
     var unitPrice: Double?
+    var originalCurrency: String
 
     // 日期
     var acquiredDate: Date?
@@ -79,6 +80,7 @@ final class Item {
         sublocation: Sublocation? = nil,
         quantity: Int = 1,
         unitPrice: Double? = nil,
+        originalCurrency: String = "USD",
         acquiredDate: Date? = nil,
         expiryDate: Date? = nil,
         shelfLifeDays: Int? = nil,
@@ -97,6 +99,7 @@ final class Item {
         self.sublocation = sublocation
         self.quantity = quantity
         self.unitPrice = unitPrice
+        self.originalCurrency = originalCurrency
         self.acquiredDate = acquiredDate
         self.expiryDate = expiryDate
         self.shelfLifeDays = shelfLifeDays

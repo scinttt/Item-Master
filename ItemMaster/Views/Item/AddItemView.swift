@@ -13,6 +13,7 @@ struct AddItemView: View {
     @State private var name = ""
     @State private var quantity = 1
     @State private var unitPriceString = ""
+    @State private var selectedCurrency: Constants.Currency = .usd
     @State private var acquiredDate: Date?
     @State private var expiryDate: Date?
     @State private var shelfLifeDaysString = ""
@@ -138,7 +139,15 @@ struct AddItemView: View {
                 TextField("可选", text: $unitPriceString)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .frame(width: 120)
+                    .frame(width: 80)
+                
+                Picker("币种", selection: $selectedCurrency) {
+                    ForEach(Constants.Currency.allCases, id: \.self) { currency in
+                        Text(currency.rawValue).tag(currency)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
             }
         }
     }
@@ -362,6 +371,7 @@ struct AddItemView: View {
             sublocation: selectedSublocation,
             quantity: quantity,
             unitPrice: Double(unitPriceString),
+            originalCurrency: selectedCurrency.rawValue,
             acquiredDate: showAcquiredDate ? (acquiredDate ?? Date()) : nil,
             expiryDate: showExpiryDate ? (expiryDate ?? Date()) : nil,
             shelfLifeDays: Int(shelfLifeDaysString),

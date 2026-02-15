@@ -4,6 +4,8 @@ import SwiftData
 struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
+    @AppStorage("usdToCnyRate") var exchangeRate: Double = Constants.usdToCnyRate
     
     let item: Item
     
@@ -120,7 +122,9 @@ struct ItemDetailView: View {
                 }
                 
                 if let price = item.unitPrice {
-                    detailRow(label: "单价", value: String(format: "¥%.2f", price))
+                    let convertedPrice = CurrencyHelper.convert(price, from: item.originalCurrency, to: displayCurrency, rate: exchangeRate)
+                    let formattedPrice = CurrencyHelper.format(convertedPrice, to: displayCurrency)
+                    detailRow(label: "单价", value: formattedPrice)
                 }
             }
             

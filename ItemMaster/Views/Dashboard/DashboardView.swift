@@ -4,8 +4,9 @@ import Charts
 
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
     @Query private var items: [Item]
-    @State private var selectedSegment = 0
+    @State private var viewModel = DashboardViewModel()
 
     private struct CategoryStat: Identifiable {
         var id: UUID { category.id }
@@ -18,7 +19,7 @@ struct DashboardView: View {
         
         for item in items {
             let cat = item.category
-            let val = selectedSegment == 0 ? Double(item.quantity) : (item.unitPrice ?? 0) * Double(item.quantity)
+            let val = viewModel.calculateValue(for: item)
             
             if let existing = dict[cat.id] {
                 dict[cat.id] = (cat, existing.value + val)
@@ -30,19 +31,15 @@ struct DashboardView: View {
         return dict.values.map { CategoryStat(category: $0.category, value: $0.value) }
             .sorted { $0.value > $1.value }
     }
-
-    private func formatValue(_ value: Double) -> String {
-        if selectedSegment == 0 {
-            return "\(Int(value))"
-        } else {
-            return value.formatted(.currency(code: "CNY"))
-        }
+    
+    private var totalValue: Double {
+        chartData.reduce(0) { $0 + $1.value }
     }
 
     var body: some View {
         NavigationStack {
             VStack {
-                Picker("图表类型", selection: $selectedSegment) {
+                Picker("图表类型", selection: $viewModel.selectedSegment) {
                     Text("物品总数").tag(0)
                     Text("物品总价").tag(1)
                 }
@@ -66,6 +63,20 @@ struct DashboardView: View {
                             }
                             .frame(height: 250)
                             .padding()
+                            .chartBackground { chartProxy in
+                                GeometryReader { geometry in
+                                    let frame = geometry[chartProxy.plotAreaFrame]
+                                    VStack(spacing: 0) {
+                                        Text(viewModel.selectedSegment == 0 ? "总量" : "总价")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text(viewModel.formatValue(totalValue))
+                                            .font(.headline)
+                                            .bold()
+                                    }
+                                    .position(x: frame.midX, y: frame.midY)
+                                }
+                            }
 
                             // List
                             VStack(alignment: .leading, spacing: 0) {
@@ -77,11 +88,8 @@ struct DashboardView: View {
                                 ForEach(chartData) { stat in
                                     NavigationLink(destination: SubcategoryDashboardView(category: stat.category)) {
                                         HStack {
-                                            // Color indicator matching chart
                                             Circle()
-                                                .fill(Color.accentColor) // Fallback or dynamic logic? Charts auto-assign colors. 
-                                                // Note: In Swift Charts, custom color mapping is usually done via scale.
-                                                // For simplicity and matching, we let it use default colors and link labels.
+                                                .fill(Color.accentColor)
                                                 .frame(width: 8, height: 8)
                                             
                                             Text(stat.category.name)
@@ -89,7 +97,7 @@ struct DashboardView: View {
                                             
                                             Spacer()
                                             
-                                            Text(formatValue(stat.value))
+                                            Text(viewModel.formatValue(stat.value))
                                                 .foregroundStyle(.secondary)
                                             
                                             Image(systemName: "chevron.right")

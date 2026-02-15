@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ItemRowView: View {
+    @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
+    @AppStorage("usdToCnyRate") var exchangeRate: Double = Constants.usdToCnyRate
     let item: Item
 
     var body: some View {
@@ -28,9 +30,18 @@ struct ItemRowView: View {
 
             Spacer()
 
-            Text("×\(item.quantity)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("×\(item.quantity)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                if let price = item.unitPrice {
+                    let convertedPrice = CurrencyHelper.convert(price, from: item.originalCurrency, to: displayCurrency, rate: exchangeRate)
+                    Text(CurrencyHelper.format(convertedPrice, to: displayCurrency))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 }

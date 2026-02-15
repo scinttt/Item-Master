@@ -32,4 +32,16 @@ enum Constants {
 
         var id: String { rawValue }
     }
+
+    // MARK: Currency
+    enum Currency: String, Codable, CaseIterable {
+        case usd = "USD"
+        case cny = "CNY"
+
+        var symbol: String {
+            self == .usd ? "$" : "¥"
+        }
+    }
+
+    static let usdToCnyRate: Double = 7.0
 }

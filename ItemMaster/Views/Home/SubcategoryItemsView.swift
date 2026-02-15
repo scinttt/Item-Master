@@ -3,6 +3,7 @@ import SwiftData
 
 struct SubcategoryItemsView: View {
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
     @Query private var items: [Item]
     let subcategory: Subcategory
     

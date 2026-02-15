@@ -15,6 +15,7 @@ struct EditItemView: View {
     @State private var name: String
     @State private var quantity: Int
     @State private var unitPriceString: String
+    @State private var selectedCurrency: Constants.Currency
     @State private var acquiredDate: Date?
     @State private var expiryDate: Date?
     @State private var shelfLifeDaysString: String
@@ -51,6 +52,7 @@ struct EditItemView: View {
         _name = State(initialValue: item.name)
         _quantity = State(initialValue: item.quantity)
         _unitPriceString = State(initialValue: item.unitPrice.map { "\($0)" } ?? "")
+        _selectedCurrency = State(initialValue: Constants.Currency(rawValue: item.originalCurrency) ?? .usd)
         _acquiredDate = State(initialValue: item.acquiredDate)
         _expiryDate = State(initialValue: item.expiryDate)
         _shelfLifeDaysString = State(initialValue: item.shelfLifeDays.map { "\($0)" } ?? "")
@@ -171,7 +173,15 @@ struct EditItemView: View {
                 TextField("可选", text: $unitPriceString)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .frame(width: 120)
+                    .frame(width: 80)
+                
+                Picker("币种", selection: $selectedCurrency) {
+                    ForEach(Constants.Currency.allCases, id: \.self) { currency in
+                        Text(currency.rawValue).tag(currency)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
             }
         }
     }
@@ -406,6 +416,7 @@ struct EditItemView: View {
         item.sublocation = selectedSublocation
         item.quantity = quantity
         item.unitPrice = Double(unitPriceString)
+        item.originalCurrency = selectedCurrency.rawValue
         item.acquiredDate = showAcquiredDate ? (acquiredDate ?? Date()) : nil
         item.expiryDate = showExpiryDate ? (expiryDate ?? Date()) : nil
         item.shelfLifeDays = Int(shelfLifeDaysString)
