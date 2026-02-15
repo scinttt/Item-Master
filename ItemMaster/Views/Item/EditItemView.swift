@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import AVFoundation
 
 struct EditItemView: View {
     @Environment(\.modelContext) private var modelContext
@@ -34,6 +35,7 @@ struct EditItemView: View {
     @State private var selectedImage: UIImage?
     @State private var photosPickerItem: PhotosPickerItem?
     @State private var showCamera = false
+    @State private var showPermissionAlert = false
     @State private var currentImageFilename: String?
     @State private var imageDeleted = false
     
@@ -96,6 +98,16 @@ struct EditItemView: View {
             .alert("请选择分类", isPresented: $showValidationAlert) {
                 Button("好的", role: .cancel) {}
             }
+            .alert("需要相机权限", isPresented: $showPermissionAlert) {
+                Button("取消", role: .cancel) {}
+                Button("去设置") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            } message: {
+                Text("您之前拒绝了相机访问。请前往系统设置开启权限，以便为物品拍摄照片。")
+            }
             .sheet(isPresented: $showCamera) {
                 CameraPicker { image in
                     selectedImage = image
@@ -108,7 +120,7 @@ struct EditItemView: View {
         }
     }
     
-    // MARK: - Sections (Reused from AddItemView with adaptations)
+    // MARK: - Sections
     
     private var imageSection: some View {
         Section("图片") {
@@ -138,7 +150,7 @@ struct EditItemView: View {
                 Spacer()
                 
                 Button {
-                    showCamera = true
+                    checkCameraPermission()
                 } label: {
                     Label("拍照", systemImage: "camera")
                 }
@@ -310,6 +322,25 @@ struct EditItemView: View {
     }
     
     // MARK: - Actions
+
+    private func checkCameraPermission() {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            showCamera = true
+            return
+        }
+
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
+        case .notDetermined:
+            showCamera = true
+        case .authorized:
+            showCamera = true
+        case .denied, .restricted:
+            showPermissionAlert = true
+        @unknown default:
+            break
+        }
+    }
     
     private func loadPhoto() {
         guard let item = photosPickerItem else { return }
