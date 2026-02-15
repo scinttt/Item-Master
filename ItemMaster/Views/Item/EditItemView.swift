@@ -1,13 +1,10 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
-import AVFoundation
 
 struct EditItemView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
-    @Query(sort: \Location.name) private var locations: [Location]
     
     let item: Item
     
@@ -15,6 +12,7 @@ struct EditItemView: View {
     @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
     @State private var name: String
     @State private var quantity: Double
+    @State private var unit: String
     @State private var unitPriceString: String
     @State private var selectedCurrency: Constants.Currency
     @State private var acquiredDate: Date?
@@ -38,7 +36,6 @@ struct EditItemView: View {
     @State private var photosPickerItem: PhotosPickerItem?
     @State private var showCamera = false
     @State private var showPermissionAlert = false
-    @State private var currentImageFilename: String?
     @State private var imageDeleted = false
     
     // Date toggles
@@ -52,9 +49,9 @@ struct EditItemView: View {
         self.item = item
         _name = State(initialValue: item.name)
         _quantity = State(initialValue: item.quantity)
+        _unit = State(initialValue: item.unit)
         _unitPriceString = State(initialValue: item.unitPrice.map { "\($0)" } ?? "")
         
-        // 如果物品还没有 originalCurrency，则使用全局偏好
         let initialCurrencyString = item.originalCurrency.isEmpty ? 
             (UserDefaults.standard.string(forKey: "globalDisplayCurrency") ?? Constants.Currency.usd.rawValue) : 
             item.originalCurrency
@@ -73,11 +70,9 @@ struct EditItemView: View {
         _selectedLocation = State(initialValue: item.location)
         _selectedSublocation = State(initialValue: item.sublocation)
         
-        _currentImageFilename = State(initialValue: item.imageFilename)
         _showAcquiredDate = State(initialValue: item.acquiredDate != nil)
         _showExpiryDate = State(initialValue: item.expiryDate != nil)
         
-        // Load initial image if exists
         if let filename = item.imageFilename {
             _selectedImage = State(initialValue: ImageStorage.load(filename: filename))
         }
@@ -86,14 +81,30 @@ struct EditItemView: View {
     var body: some View {
         NavigationStack {
             Form {
-                imageSection
-                basicInfoSection
-                categorySection
-                locationSection
-                dateSection
-                restockSection
-                tagSection
-                notesSection
+                ItemEditorForm(
+                    name: $name,
+                    quantity: $quantity,
+                    unit: $unit,
+                    unitPriceString: $unitPriceString,
+                    selectedCurrency: $selectedCurrency,
+                    selectedCategory: $selectedCategory,
+                    selectedSubcategory: $selectedSubcategory,
+                    selectedLocation: $selectedLocation,
+                    selectedSublocation: $selectedSublocation,
+                    showAcquiredDate: $showAcquiredDate,
+                    acquiredDate: $acquiredDate,
+                    showExpiryDate: $showExpiryDate,
+                    expiryDate: $expiryDate,
+                    shelfLifeDaysString: $shelfLifeDaysString,
+                    restockIntervalDaysString: $restockIntervalDaysString,
+                    tagNames: $tagNames,
+                    tagInput: $tagInput,
+                    notes: $notes,
+                    selectedImage: $selectedImage,
+                    photosPickerItem: $photosPickerItem,
+                    showCamera: $showCamera,
+                    showPermissionAlert: $showPermissionAlert
+                )
             }
             .navigationTitle("编辑物品")
             .navigationBarTitleDisplayMode(.inline)
@@ -127,245 +138,11 @@ struct EditItemView: View {
             .onChange(of: photosPickerItem) {
                 loadPhoto()
             }
-        }
-    }
-    
-    // MARK: - Sections
-    
-    private var imageSection: some View {
-        Section("图片") {
-            if let selectedImage {
-                Image(uiImage: selectedImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 200)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                
-                Button("移除图片", role: .destructive) {
-                    self.selectedImage = nil
-                    self.photosPickerItem = nil
-                    self.imageDeleted = true
+            .onChange(of: selectedCategory) {
+                if selectedCategory?.id != item.category.id {
+                    selectedSubcategory = nil
                 }
             }
-            
-            HStack {
-                PhotosPicker(selection: $photosPickerItem, matching: .images, photoLibrary: .shared()) {
-                    Label("从相册选择", systemImage: "photo.on.rectangle")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-                
-                Button {
-                    checkCameraPermission()
-                } label: {
-                    Label("拍照", systemImage: "camera")
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-    
-    private var basicInfoSection: some View {
-        Section("基本信息") {
-            TextField("名称", text: $name)
-            
-            HStack {
-                Text("数量")
-                Spacer()
-                TextField("", value: $quantity, format: .number.precision(.fractionLength(0...2)))
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 80)
-                Stepper("", value: $quantity, in: 0...9999, step: 1)
-                    .labelsHidden()
-            }
-            
-            HStack {
-                Text("单价")
-                Spacer()
-                TextField("可选", text: $unitPriceString)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 80)
-                
-                Picker("币种", selection: $selectedCurrency) {
-                    ForEach(Constants.Currency.allCases, id: \.self) { currency in
-                        Text(currency.rawValue).tag(currency)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-            }
-        }
-    }
-    
-    private var categorySection: some View {
-        Section("分类（必填）") {
-            NavigationLink {
-                CategorySelectionView(selectedCategory: $selectedCategory)
-            } label: {
-                HStack {
-                    Text("一级分类")
-                    Spacer()
-                    Text(selectedCategory?.name ?? "请选择")
-                        .foregroundStyle(selectedCategory == nil ? .secondary : .primary)
-                }
-            }
-            
-            if let category = selectedCategory {
-                NavigationLink {
-                    SubcategorySelectionView(
-                        category: category,
-                        selectedSubcategory: $selectedSubcategory
-                    )
-                } label: {
-                    HStack {
-                        Text("二级分类")
-                        Spacer()
-                        Text(selectedSubcategory?.name ?? "可选")
-                            .foregroundStyle(selectedSubcategory == nil ? .secondary : .primary)
-                    }
-                }
-            }
-        }
-        .onChange(of: selectedCategory) {
-            if selectedCategory?.id != item.category.id {
-                selectedSubcategory = nil
-            }
-        }
-    }
-    
-    private var locationSection: some View {
-        Section("位置（可选）") {
-            Picker("一级位置", selection: $selectedLocation) {
-                Text("无").tag(nil as Location?)
-                ForEach(locations) { location in
-                    Text(location.name).tag(location as Location?)
-                }
-            }
-            .onChange(of: selectedLocation) {
-                if selectedLocation?.id != item.location?.id {
-                    selectedSublocation = nil
-                }
-            }
-            
-            if let location = selectedLocation, !location.sublocations.isEmpty {
-                Picker("二级位置", selection: $selectedSublocation) {
-                    Text("无").tag(nil as Sublocation?)
-                    ForEach(location.sublocations) { sub in
-                        Text(sub.name).tag(sub as Sublocation?)
-                    }
-                }
-            }
-        }
-    }
-    
-    private var dateSection: some View {
-        Section("日期") {
-            Toggle("获取时间", isOn: $showAcquiredDate)
-            if showAcquiredDate {
-                DatePicker("获取时间",
-                           selection: Binding(
-                               get: { acquiredDate ?? Date() },
-                               set: { acquiredDate = $0 }
-                           ),
-                           displayedComponents: .date)
-            }
-            
-            Toggle("过期时间", isOn: $showExpiryDate)
-            if showExpiryDate {
-                DatePicker("过期时间",
-                           selection: Binding(
-                               get: { expiryDate ?? Date() },
-                               set: { expiryDate = $0 }
-                           ),
-                           displayedComponents: .date)
-            }
-            
-            HStack {
-                Text("保质期（天）")
-                Spacer()
-                TextField("可选", text: $shelfLifeDaysString)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 120)
-            }
-        }
-    }
-    
-    private var restockSection: some View {
-        Section("补货") {
-            HStack {
-                Text("补货频率（天）")
-                Spacer()
-                TextField("可选", text: $restockIntervalDaysString)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 120)
-            }
-        }
-    }
-    
-    private var tagSection: some View {
-        Section("标签") {
-            FlowLayout(spacing: 8) {
-                ForEach(tagNames, id: \.self) { tag in
-                    HStack(spacing: 4) {
-                        Text(tag)
-                            .font(.subheadline)
-                        Button {
-                            tagNames.removeAll { $0 == tag }
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.caption)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(.fill.tertiary)
-                    .clipShape(Capsule())
-                }
-            }
-            
-            HStack {
-                TextField("输入标签", text: $tagInput)
-                    .onSubmit { addTag() }
-                Button("添加") { addTag() }
-                    .disabled(tagInput.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-        }
-    }
-    
-    private var notesSection: some View {
-        Section("备注") {
-            TextField("备注信息", text: $notes, axis: .vertical)
-                .lineLimit(3...6)
-        }
-    }
-    
-    // MARK: - Actions
-
-    private func checkCameraPermission() {
-        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
-            showCamera = true
-            return
-        }
-
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        switch status {
-        case .notDetermined:
-            showCamera = true
-        case .authorized:
-            showCamera = true
-        case .denied, .restricted:
-            showPermissionAlert = true
-        @unknown default:
-            break
         }
     }
     
@@ -380,21 +157,12 @@ struct EditItemView: View {
         }
     }
     
-    private func addTag() {
-        let trimmed = tagInput.trimmingCharacters(in: .whitespaces)
-        if !trimmed.isEmpty && !tagNames.contains(trimmed) {
-            tagNames.append(trimmed)
-        }
-        tagInput = ""
-    }
-    
     private func saveItem() {
         guard let category = selectedCategory else {
             showValidationAlert = true
             return
         }
         
-        // Handle image
         var finalImageFilename = item.imageFilename
         
         if imageDeleted {
@@ -405,14 +173,12 @@ struct EditItemView: View {
         }
         
         if let newImage = selectedImage, newImage != ImageStorage.load(filename: item.imageFilename ?? "") {
-            // If there's a new image (different from current one)
             if let oldFilename = item.imageFilename {
                 ImageStorage.delete(filename: oldFilename)
             }
             finalImageFilename = ImageHelper.compressAndSave(image: newImage)
         }
         
-        // Resolve or create tags
         var tags: [Tag] = []
         for tagName in tagNames {
             let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { $0.name == tagName })
@@ -425,13 +191,13 @@ struct EditItemView: View {
             }
         }
         
-        // Update item fields
         item.name = name.isEmpty ? item.id.uuidString : name
         item.category = category
         item.subcategory = selectedSubcategory
         item.location = selectedLocation
         item.sublocation = selectedSublocation
         item.quantity = quantity
+        item.unit = unit
         item.unitPrice = Double(unitPriceString)
         item.originalCurrency = selectedCurrency.rawValue
         item.acquiredDate = showAcquiredDate ? (acquiredDate ?? Date()) : nil
