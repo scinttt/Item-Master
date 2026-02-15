@@ -111,7 +111,10 @@ struct CategoryDetailView: View {
             Button("取消", role: .cancel) {}
             Button("删除", role: .destructive) {
                 if let subcategory = subcategoryToDelete {
+                    // 显式从父分类的数组中移除，确保 UI 立即刷新
+                    category.subcategories.removeAll { $0.id == subcategory.id }
                     modelContext.delete(subcategory)
+                    try? modelContext.save()
                 }
             }
         } message: {
