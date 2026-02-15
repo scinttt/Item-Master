@@ -38,9 +38,7 @@
    ```
 2. Open `ItemMaster.xcodeproj` in Xcode.
 3. Ensure your signing team is configured in the project settings.
-4. Build and Run!
-
-> **Note**: To test camera functionality on a real device, ensure you have provided a valid `NSCameraUsageDescription` in the `Info.plist`.
+4. Build and Run it with your iphone connected!
 
 ## 📂 Project Structure
 
