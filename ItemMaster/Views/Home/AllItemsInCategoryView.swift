@@ -8,6 +8,7 @@ struct AllItemsInCategoryView: View {
     
     @State private var sortOption: Constants.SortOption = .expiryDate
     @State private var isAscending: Bool = true
+    @State private var showAddItem = false
 
     init(category: Category) {
         self.category = category
@@ -82,7 +83,17 @@ struct AllItemsInCategoryView: View {
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                 }
+                
+                // 添加物品按钮
+                Button {
+                    showAddItem = true
+                } label: {
+                    Image(systemName: "plus")
+                }
             }
+        }
+        .sheet(isPresented: $showAddItem) {
+            AddItemView(initialCategory: category)
         }
     }
 

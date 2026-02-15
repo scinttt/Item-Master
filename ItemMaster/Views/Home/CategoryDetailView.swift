@@ -6,6 +6,7 @@ struct CategoryDetailView: View {
     let category: Category
     @State private var isAddingSubcategory = false
     @State private var newSubcategoryName = ""
+    @State private var showAddItem = false
 
     var body: some View {
         List {
@@ -49,6 +50,18 @@ struct CategoryDetailView: View {
             }
         }
         .navigationTitle(category.name)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showAddItem = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .sheet(isPresented: $showAddItem) {
+            AddItemView(initialCategory: category)
+        }
     }
 
     private func saveNewSubcategory() {

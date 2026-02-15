@@ -23,15 +23,18 @@ struct AddItemView: View {
     @State private var tagInput = ""
     @State private var tagNames: [String] = []
 
-    init() {
-        // 直接从 UserDefaults 读取，因为在 init 阶段 AppStorage 可能还没准备好
-        let initialCurrency = UserDefaults.standard.string(forKey: "globalDisplayCurrency") ?? Constants.Currency.usd.rawValue
-        _selectedCurrency = State(initialValue: Constants.Currency(rawValue: initialCurrency) ?? .usd)
-    }
-
     // Category
     @State private var selectedCategory: Category?
     @State private var selectedSubcategory: Subcategory?
+
+    init(initialCategory: Category? = nil, initialSubcategory: Subcategory? = nil) {
+        // 直接从 UserDefaults 读取，因为在 init 阶段 AppStorage 可能还没准备好
+        let initialCurrency = UserDefaults.standard.string(forKey: "globalDisplayCurrency") ?? Constants.Currency.usd.rawValue
+        _selectedCurrency = State(initialValue: Constants.Currency(rawValue: initialCurrency) ?? .usd)
+        
+        _selectedCategory = State(initialValue: initialCategory)
+        _selectedSubcategory = State(initialValue: initialSubcategory)
+    }
 
     // Location
     @State private var selectedLocation: Location?
