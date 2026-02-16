@@ -58,7 +58,7 @@ struct HomeView: View {
                             HStack {
                                 Text(category.name)
                                 Spacer()
-                                Text("\(category.items.count)")
+                                Text("\(itemCount(for: category))")
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -125,6 +125,10 @@ struct HomeView: View {
                 Button("删除", role: .destructive) { if let category = categoryToDelete { modelContext.delete(category) } }
             } message: { Text("您确定要删除这个空分类吗？") }
         }
+    }
+
+    private func itemCount(for category: Category) -> Int {
+        allItems.filter { $0.category.id == category.id }.count
     }
 
     private func saveNewCategory() {

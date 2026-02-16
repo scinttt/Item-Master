@@ -191,9 +191,32 @@ struct EditItemView: View {
             }
         }
         
+        // Track old values to update collections and trigger UI refresh
+        let oldCategory = item.category
+        let oldSubcategory = item.subcategory
+        
         item.name = name.isEmpty ? item.id.uuidString : name
-        item.category = category
-        item.subcategory = selectedSubcategory
+        
+        // Update Category relationship and collections
+        if oldCategory.id != category.id {
+            item.category = category
+            oldCategory.items.removeAll { $0.id == item.id }
+            if !category.items.contains(where: { $0.id == item.id }) {
+                category.items.append(item)
+            }
+        }
+        
+        // Update Subcategory relationship and collections
+        if oldSubcategory?.id != selectedSubcategory?.id {
+            item.subcategory = selectedSubcategory
+            oldSubcategory?.items.removeAll { $0.id == item.id }
+            if let newSub = selectedSubcategory {
+                if !newSub.items.contains(where: { $0.id == item.id }) {
+                    newSub.items.append(item)
+                }
+            }
+        }
+        
         item.location = selectedLocation
         item.sublocation = selectedSublocation
         item.quantity = quantity
@@ -209,6 +232,7 @@ struct EditItemView: View {
         item.tags = tags
         item.updatedAt = Date()
         
+        try? modelContext.save()
         dismiss()
     }
 }

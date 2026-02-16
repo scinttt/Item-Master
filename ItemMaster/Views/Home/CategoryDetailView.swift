@@ -4,6 +4,7 @@ import SwiftData
 struct CategoryDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let category: Category
+    @Query private var allItems: [Item]
     @State private var isAddingSubcategory = false
     @State private var newSubcategoryName = ""
     @State private var showAddItem = false
@@ -39,7 +40,7 @@ struct CategoryDetailView: View {
     }
 
     private var uncategorizedCount: Int {
-        category.items.filter { $0.subcategory == nil }.count
+        allItems.filter { $0.category.id == category.id && $0.subcategory == nil }.count
     }
 
     var body: some View {
@@ -61,7 +62,7 @@ struct CategoryDetailView: View {
                             HStack {
                                 Text(subcategory.name)
                                 Spacer()
-                                Text("\(subcategory.items.count)")
+                                Text("\(itemCount(for: subcategory))")
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -123,6 +124,10 @@ struct CategoryDetailView: View {
                 }
             }
         } message: { Text("您确定要删除这个空分类吗？") }
+    }
+
+    private func itemCount(for subcategory: Subcategory) -> Int {
+        allItems.filter { $0.subcategory?.id == subcategory.id }.count
     }
 
     private func saveNewSubcategory() {
