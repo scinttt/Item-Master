@@ -51,7 +51,7 @@ struct CategoryDetailView: View {
                     case .uncategorized:
                         NavigationLink(destination: LazyView(UncategorizedItemsView(category: category))) {
                             HStack {
-                                Text("未分类物品")
+                                Text("\(category.name)(未分类)")
                                 Spacer()
                                 Text("\(uncategorizedCount)")
                                     .foregroundStyle(.secondary)

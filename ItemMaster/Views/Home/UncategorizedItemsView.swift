@@ -14,7 +14,7 @@ struct UncategorizedItemsView: View {
     var body: some View {
         ItemSortableListView(
             filter: filter,
-            title: "未分类物品",
+            title: "\(category.name)(未分类)",
             initialCategory: category,
             initialSubcategory: nil
         )

@@ -33,7 +33,7 @@ struct SubcategoryDashboardView: View {
         var dict = [String: Double]()
         
         for item in categoryItems {
-            let subName = item.subcategory?.name ?? "未分类"
+            let subName = item.subcategory?.name ?? "\(category.name)(未分类)"
             let val = viewModel.calculateValue(for: item)
             
             dict[subName, default: 0] += val
