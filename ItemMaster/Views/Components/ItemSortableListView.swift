@@ -2,16 +2,40 @@ import SwiftUI
 import SwiftData
 
 struct ItemSortableListView: View {
-    @Environment(\.modelContext) private var modelContext
-    @AppStorage("isGridView") private var isGridView = false
-    
-    let items: [Item]
+    let filter: Predicate<Item>
     let title: String
     let initialCategory: Category?
     let initialSubcategory: Subcategory?
     
     @State private var sortOption: Constants.SortOption = .expiryDate
     @State private var isAscending: Bool = true
+    @AppStorage("isGridView") private var isGridView = false
+
+    var body: some View {
+        ItemSortableListInnerView(
+            filter: filter,
+            sortOption: $sortOption,
+            isAscending: $isAscending,
+            isGridView: $isGridView,
+            title: title,
+            initialCategory: initialCategory,
+            initialSubcategory: initialSubcategory
+        )
+    }
+}
+
+private struct ItemSortableListInnerView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var items: [Item]
+    
+    @Binding var sortOption: Constants.SortOption
+    @Binding var isAscending: Bool
+    @Binding var isGridView: Bool
+    
+    let title: String
+    let initialCategory: Category?
+    let initialSubcategory: Subcategory?
+    
     @State private var showAddItem = false
 
     private let columns = [
@@ -20,26 +44,38 @@ struct ItemSortableListView: View {
         GridItem(.flexible(), spacing: 2)
     ]
 
-    private var sortedItems: [Item] {
-        items.sorted { a, b in
-            let result: Bool
-            switch sortOption {
-            case .expiryDate:
-                switch (a.expiryDate, b.expiryDate) {
-                case let (dateA?, dateB?): result = dateA < dateB
-                case (_?, nil): result = true
-                case (nil, _?): result = false
-                case (nil, nil): return a.createdAt > b.createdAt
-                }
-            case .unitPrice:
-                result = (a.unitPrice ?? 0) < (b.unitPrice ?? 0)
-            case .acquiredDate:
-                result = (a.acquiredDate ?? .distantPast) < (b.acquiredDate ?? .distantPast)
-            case .quantity:
-                result = a.quantity < b.quantity
-            }
-            return isAscending ? result : !result
+    init(
+        filter: Predicate<Item>,
+        sortOption: Binding<Constants.SortOption>,
+        isAscending: Binding<Bool>,
+        isGridView: Binding<Bool>,
+        title: String,
+        initialCategory: Category?,
+        initialSubcategory: Subcategory?
+    ) {
+        self._sortOption = sortOption
+        self._isAscending = isAscending
+        self._isGridView = isGridView
+        self.title = title
+        self.initialCategory = initialCategory
+        self.initialSubcategory = initialSubcategory
+        
+        let order: SortOrder = isAscending.wrappedValue ? .forward : .reverse
+        let descriptors: [SortDescriptor<Item>]
+        switch sortOption.wrappedValue {
+        case .expiryDate:
+            // 数据库排序：nil 值的处理取决于数据库。通常 nil 在 forward 时排在最前或最后。
+            // 之前的内存排序逻辑是将 nil 放在最后（ascending时）。
+            descriptors = [SortDescriptor(\Item.expiryDate, order: order), SortDescriptor(\Item.createdAt, order: .reverse)]
+        case .unitPrice:
+            descriptors = [SortDescriptor(\Item.unitPrice, order: order)]
+        case .acquiredDate:
+            descriptors = [SortDescriptor(\Item.acquiredDate, order: order)]
+        case .quantity:
+            descriptors = [SortDescriptor(\Item.quantity, order: order)]
         }
+        
+        _items = Query(filter: filter, sort: descriptors)
     }
 
     var body: some View {
@@ -80,10 +116,10 @@ struct ItemSortableListView: View {
 
     private var listView: some View {
         List {
-            if sortedItems.isEmpty {
+            if items.isEmpty {
                 ContentUnavailableView("暂无物品", systemImage: "tray")
             } else {
-                ForEach(sortedItems) { item in
+                ForEach(items) { item in
                     NavigationLink(destination: LazyView(ItemDetailView(item: item))) {
                         ItemRowView(item: item)
                     }
@@ -95,12 +131,12 @@ struct ItemSortableListView: View {
 
     private var gridView: some View {
         ScrollView {
-            if sortedItems.isEmpty {
+            if items.isEmpty {
                 ContentUnavailableView("暂无物品", systemImage: "tray")
                     .padding(.top, 100)
             } else {
                 LazyVGrid(columns: columns, spacing: 2) {
-                    ForEach(sortedItems) { item in
+                    ForEach(items) { item in
                         NavigationLink(destination: LazyView(ItemDetailView(item: item))) {
                             gridCell(for: item)
                         }
@@ -123,7 +159,7 @@ struct ItemSortableListView: View {
     }
 
     private func deleteItems(at offsets: IndexSet) {
-        let itemsToDelete = offsets.map { sortedItems[$0] }
+        let itemsToDelete = offsets.map { items[$0] }
         for item in itemsToDelete {
             if let filename = item.imageFilename {
                 ImageStorage.delete(filename: filename)
