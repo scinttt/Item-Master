@@ -43,9 +43,4 @@ final class DashboardViewModel {
             return CurrencyHelper.format(value, to: displayCurrency)
         }
     }
-    
-    /// 环形图中心标题
-    var centerTitle: String {
-        selectedSegment == 0 ? "总数量" : "总价值"
-    }
 }
