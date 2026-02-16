@@ -14,6 +14,7 @@ struct ItemImageView: View {
             if let image = image {
                 Image(uiImage: image)
                     .resizable()
+                    .scaledToFill()
             } else if isLoading {
                 ZStack {
                     Color.gray.opacity(0.05)
@@ -24,10 +25,13 @@ struct ItemImageView: View {
                 ZStack {
                     Color.gray.opacity(0.1)
                     Image(systemName: "photo")
+                        .font(.title3)
                         .foregroundStyle(.secondary)
                 }
             }
         }
+        .clipped() // 确保图片内容不溢出
+        .background(Color(.systemGray6))
         .onAppear {
             loadImage()
         }

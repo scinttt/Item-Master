@@ -148,14 +148,13 @@ private struct ItemSortableListInnerView: View {
     }
 
     private func gridCell(for item: Item) -> some View {
-        ZStack {
-            Color.gray.opacity(0.05)
-                .aspectRatio(1, contentMode: .fill)
-            ItemImageView(filename: item.imageFilename)
-                .scaledToFill()
-        }
-        .contentShape(Rectangle())
-        .clipped()
+        Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .overlay(
+                ItemImageView(filename: item.imageFilename)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .contentShape(Rectangle())
     }
 
     private func deleteItems(at offsets: IndexSet) {
