@@ -115,10 +115,15 @@ struct DashboardView: View {
                 }
             }
             .navigationTitle("统计")
-            .withCommonDestinations() // 注入通用目的地 (Item)
-            // 覆盖 Category 目的地，统计页需要跳转到 SubcategoryDashboardView 而非 CategoryDetailView
+            // 不再使用 withCommonDestinations() 以避免 Category 跳转冲突
             .navigationDestination(for: Category.self) { category in
                 SubcategoryDashboardView(category: category, initialSegment: viewModel.selectedSegment)
+            }
+            .navigationDestination(for: Subcategory.self) { subcategory in
+                SubcategoryItemsView(subcategory: subcategory)
+            }
+            .navigationDestination(for: Item.self) { item in
+                ItemDetailView(item: item)
             }
         }
     }
