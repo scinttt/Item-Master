@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - Item
 @Model
-final class Item {
+final class Item: Hashable {
     var id: UUID
     var name: String
 
@@ -137,5 +137,13 @@ final class Item {
         self.tags = tags
         self.createdAt = Date()
         self.updatedAt = Date()
+    }
+
+    static func == (lhs: Item, rhs: Item) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }

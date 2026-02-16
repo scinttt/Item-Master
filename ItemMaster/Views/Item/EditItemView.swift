@@ -113,9 +113,6 @@ struct EditItemView: View {
             .navigationTitle("编辑物品")
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.immediately)
-            .onTapGesture {
-                isInputActive = false
-            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }

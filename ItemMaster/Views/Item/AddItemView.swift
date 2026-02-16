@@ -85,9 +85,6 @@ struct AddItemView: View {
             .navigationTitle("添加物品")
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.immediately)
-            .onTapGesture {
-                isInputActive = false
-            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }

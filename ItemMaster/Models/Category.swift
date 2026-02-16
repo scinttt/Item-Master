@@ -5,7 +5,7 @@ import SwiftData
 /// 一级分类，e.g. 食物 / 日用品 / 服饰 / 电子产品
 /// 支持用户自定义添加
 @Model
-final class Category {
+final class Category: Hashable {
     var id: UUID
     var name: String
     var iconName: String? // 预留图标字段
@@ -29,13 +29,21 @@ final class Category {
         self.subcategories = []
         self.items = []
     }
+
+    static func == (lhs: Category, rhs: Category) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 // MARK: - Subcategory
 /// 二级分类，e.g. 食物 → 零食 / 蔬菜 / 肉类
 /// 不允许三级
 @Model
-final class Subcategory {
+final class Subcategory: Hashable {
     var id: UUID
     var name: String
     var iconName: String? // 预留图标字段
@@ -53,5 +61,13 @@ final class Subcategory {
         self.parentCategory = parentCategory
         self.sortOrder = sortOrder
         self.items = []
+    }
+
+    static func == (lhs: Subcategory, rhs: Subcategory) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
