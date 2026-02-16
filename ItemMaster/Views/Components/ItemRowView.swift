@@ -8,14 +8,10 @@ struct ItemRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             // Thumbnail
-            if let filename = item.imageFilename,
-               let uiImage = ImageStorage.load(filename: filename) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 44, height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
+            ItemImageView(filename: item.imageFilename)
+                .scaledToFill()
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.name)

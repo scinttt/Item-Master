@@ -16,18 +16,15 @@ struct DashboardView: View {
 
     private var chartData: [CategoryStat] {
         var dict = [UUID: (category: Category, value: Double)]()
-        
         for item in items {
             let cat = item.category
             let val = viewModel.calculateValue(for: item)
-            
             if let existing = dict[cat.id] {
                 dict[cat.id] = (cat, existing.value + val)
             } else {
                 dict[cat.id] = (cat, val)
             }
         }
-        
         return dict.values.map { CategoryStat(category: $0.category, value: $0.value) }
             .sorted { $0.value > $1.value }
     }
@@ -51,7 +48,6 @@ struct DashboardView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 20) {
-                            // Donut Chart
                             Chart(chartData) { stat in
                                 SectorMark(
                                     angle: .value("数值", stat.value),
@@ -79,19 +75,17 @@ struct DashboardView: View {
                                 }
                             }
 
-                            // List
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("分类明细")
                                     .font(.headline)
                                     .padding(.horizontal)
 
                                 ForEach(chartData) { stat in
-                                    NavigationLink(destination: SubcategoryDashboardView(category: stat.category, initialSegment: viewModel.selectedSegment)) {
+                                    NavigationLink(value: stat.category) {
                                         HStack(spacing: 12) {
                                             Circle()
                                                 .fill(Color.accentColor)
                                                 .frame(width: 10, height: 10)
-                                            
                                             HStack(alignment: .lastTextBaseline, spacing: 4) {
                                                 Text(stat.category.name)
                                                     .font(.body)
@@ -100,13 +94,10 @@ struct DashboardView: View {
                                                     .font(.caption)
                                                     .foregroundStyle(.secondary)
                                             }
-                                            
                                             Spacer()
-                                            
                                             Text(viewModel.formatValue(stat.value))
                                                 .font(.subheadline)
                                                 .foregroundStyle(.secondary)
-                                            
                                             Image(systemName: "chevron.right")
                                                 .font(.caption2)
                                                 .foregroundStyle(.tertiary)
@@ -124,6 +115,11 @@ struct DashboardView: View {
                 }
             }
             .navigationTitle("统计")
+            .withCommonDestinations() // 注入通用目的地 (Item)
+            // 覆盖 Category 目的地，统计页需要跳转到 SubcategoryDashboardView 而非 CategoryDetailView
+            .navigationDestination(for: Category.self) { category in
+                SubcategoryDashboardView(category: category, initialSegment: viewModel.selectedSegment)
+            }
         }
     }
 }

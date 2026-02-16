@@ -12,11 +12,6 @@ struct ItemDetailView: View {
     @State private var showDeleteConfirmation = false
     @State private var showEditView = false
     
-    private var image: UIImage? {
-        guard let filename = item.imageFilename else { return nil }
-        return ImageStorage.load(filename: filename)
-    }
-    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -66,25 +61,11 @@ struct ItemDetailView: View {
     // MARK: - View Components
     
     private var headerImage: some View {
-        Group {
-            if let image = image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 300)
-                    .clipped()
-            } else {
-                ZStack {
-                    Color.gray.opacity(0.1)
-                    Image(systemName: "photo")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 250)
-            }
-        }
+        ItemImageView(filename: item.imageFilename)
+            .scaledToFill()
+            .frame(maxWidth: .infinity)
+            .frame(height: 300)
+            .clipped()
     }
     
     private var titleSection: some View {
@@ -196,20 +177,12 @@ struct ItemDetailView: View {
     // MARK: - Actions
     
     private func deleteItem() {
-        // 先备份文件名
         let filename = item.imageFilename
-        
-        // 从数据库删除物品
         modelContext.delete(item)
-        
-        // 强制处理挂起的更改并保存
         try? modelContext.save()
-        
-        // 删除关联的图片文件
         if let filename = filename {
             ImageStorage.delete(filename: filename)
         }
-        
         dismiss()
     }
 }

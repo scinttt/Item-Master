@@ -18,43 +18,26 @@ struct CategoryDetailView: View {
     @State private var showDeleteRestrictedAlert = false
     @State private var showDeleteConfirmAlert = false
 
-    /// 定义一个统一的显示模型，用于合并虚拟行和真实二级分类
     enum SubcategoryRow: Identifiable {
         case uncategorized
         case real(Subcategory)
-        
         var id: String {
             switch self {
             case .uncategorized: return "uncategorized"
             case .real(let sub): return sub.id.uuidString
             }
         }
-        
-        var sortOrder: Int {
-            switch self {
-            case .uncategorized: return 0 // 这里的临时排序不重要，由视图的逻辑控制
-            case .real(let sub): return sub.sortOrder
-            }
-        }
     }
 
-    /// 获取合并后的列表
     private var displayRows: [SubcategoryRow] {
         var rows: [(order: Int, item: SubcategoryRow)] = []
-        
-        // 加入虚拟行
         rows.append((category.uncategorizedSortOrder, .uncategorized))
-        
-        // 加入真实分类
         for sub in category.subcategories {
             rows.append((sub.sortOrder, .real(sub)))
         }
-        
-        // 统一排序
         return rows.sorted(by: { $0.order < $1.order }).map { $0.item }
     }
 
-    /// 计算未分类物品的数量
     private var uncategorizedCount: Int {
         category.items.filter { $0.subcategory == nil }.count
     }
@@ -65,7 +48,7 @@ struct CategoryDetailView: View {
                 ForEach(displayRows) { row in
                     switch row {
                     case .uncategorized:
-                        NavigationLink(destination: UncategorizedItemsView(category: category)) {
+                        NavigationLink(destination: LazyView(UncategorizedItemsView(category: category))) {
                             HStack {
                                 Text("未分类物品")
                                 Spacer()
@@ -73,10 +56,8 @@ struct CategoryDetailView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        // 虚拟行不提供编辑/删除 Action
-                        
                     case .real(let subcategory):
-                        NavigationLink(destination: SubcategoryItemsView(subcategory: subcategory)) {
+                        NavigationLink(destination: LazyView(SubcategoryItemsView(subcategory: subcategory))) {
                             HStack {
                                 Text(subcategory.name)
                                 Spacer()
@@ -85,18 +66,8 @@ struct CategoryDetailView: View {
                             }
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                prepareDelete(subcategory)
-                            } label: {
-                                Label("删除", systemImage: "trash")
-                            }
-                            
-                            Button {
-                                prepareRename(subcategory)
-                            } label: {
-                                Label("编辑", systemImage: "pencil")
-                            }
-                            .tint(.orange)
+                            Button(role: .destructive) { prepareDelete(subcategory) } label: { Label("删除", systemImage: "trash") }
+                            Button { prepareRename(subcategory) } label: { Label("编辑", systemImage: "pencil") }.tint(.orange)
                         }
                     }
                 }
@@ -105,64 +76,43 @@ struct CategoryDetailView: View {
                 Text("二级分类")
             }
 
-            // Inline add subcategory
             Section {
                 if isAddingSubcategory {
                     TextField("二级分类名称", text: $newSubcategoryName)
                         .focused($isTextFieldFocused)
-                        .onSubmit {
-                            saveNewSubcategory()
-                        }
+                        .onSubmit { saveNewSubcategory() }
                         .onChange(of: isTextFieldFocused) { _, isFocused in
-                            if !isFocused && isAddingSubcategory {
-                                saveNewSubcategory()
-                            }
+                            if !isFocused && isAddingSubcategory { saveNewSubcategory() }
                         }
                 } else {
                     Button {
                         isAddingSubcategory = true
                         isTextFieldFocused = true
                     } label: {
-                        Label("添加二级分类", systemImage: "plus")
-                            .foregroundStyle(.tint)
+                        Label("添加二级分类", systemImage: "plus").foregroundStyle(.tint)
                     }
                 }
             }
 
             Section {
-                NavigationLink(destination: AllItemsInCategoryView(category: category)) {
-                    Text("显示所有\(category.name)")
-                        .foregroundStyle(.tint)
+                NavigationLink(destination: LazyView(AllItemsInCategoryView(category: category))) {
+                    Text("显示所有 \(category.name)").foregroundStyle(.tint)
                 }
             }
         }
         .navigationTitle(category.name)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showAddItem = true
-                } label: {
-                    Image(systemName: "plus")
-                }
+                Button { showAddItem = true } label: { Image(systemName: "plus") }
             }
         }
-        .sheet(isPresented: $showAddItem) {
-            AddItemView(initialCategory: category)
-        }
+        .sheet(isPresented: $showAddItem) { AddItemView(initialCategory: category) }
         .alert("重命名二级分类", isPresented: $showRenameAlert) {
             TextField("新名称", text: $renameInput)
             Button("取消", role: .cancel) {}
-            Button("保存") {
-                if let subcategory = subcategoryToRename {
-                    subcategory.name = renameInput.trimmingCharacters(in: .whitespaces)
-                }
-            }
+            Button("保存") { if let subcategory = subcategoryToRename { subcategory.name = renameInput.trimmingCharacters(in: .whitespaces) } }
         }
-        .alert("无法删除", isPresented: $showDeleteRestrictedAlert) {
-            Button("我知道了", role: .cancel) {}
-        } message: {
-            Text("该分类下仍有物品。请先将物品清空，然后再尝试删除。")
-        }
+        .alert("无法删除", isPresented: $showDeleteRestrictedAlert) { Button("我知道了", role: .cancel) {} } message: { Text("该分类下仍有物品。请先将物品清空，然后再尝试删除。") }
         .alert("确认删除", isPresented: $showDeleteConfirmAlert) {
             Button("取消", role: .cancel) {}
             Button("删除", role: .destructive) {
@@ -172,9 +122,7 @@ struct CategoryDetailView: View {
                     try? modelContext.save()
                 }
             }
-        } message: {
-            Text("您确定要删除这个空分类吗？")
-        }
+        } message: { Text("您确定要删除这个空分类吗？") }
     }
 
     private func saveNewSubcategory() {
@@ -197,24 +145,17 @@ struct CategoryDetailView: View {
     
     private func prepareDelete(_ subcategory: Subcategory) {
         subcategoryToDelete = subcategory
-        if !subcategory.items.isEmpty {
-            showDeleteRestrictedAlert = true
-        } else {
-            showDeleteConfirmAlert = true
-        }
+        if !subcategory.items.isEmpty { showDeleteRestrictedAlert = true }
+        else { showDeleteConfirmAlert = true }
     }
 
     private func moveRows(from source: IndexSet, to destination: Int) {
         var revisedRows = displayRows
         revisedRows.move(fromOffsets: source, toOffset: destination)
-        
-        // 重新分配序号并持久化
         for index in 0..<revisedRows.count {
             switch revisedRows[index] {
-            case .uncategorized:
-                category.uncategorizedSortOrder = index
-            case .real(let sub):
-                sub.sortOrder = index
+            case .uncategorized: category.uncategorizedSortOrder = index
+            case .real(let sub): sub.sortOrder = index
             }
         }
         try? modelContext.save()
