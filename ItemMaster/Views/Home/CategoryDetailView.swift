@@ -18,11 +18,64 @@ struct CategoryDetailView: View {
     @State private var showDeleteRestrictedAlert = false
     @State private var showDeleteConfirmAlert = false
 
+    /// 定义一个统一的显示模型，用于合并虚拟行和真实二级分类
+    enum SubcategoryRow: Identifiable {
+        case uncategorized
+        case real(Subcategory)
+        
+        var id: String {
+            switch self {
+            case .uncategorized: return "uncategorized"
+            case .real(let sub): return sub.id.uuidString
+            }
+        }
+        
+        var sortOrder: Int {
+            switch self {
+            case .uncategorized: return 0 // 这里的临时排序不重要，由视图的逻辑控制
+            case .real(let sub): return sub.sortOrder
+            }
+        }
+    }
+
+    /// 获取合并后的列表
+    private var displayRows: [SubcategoryRow] {
+        var rows: [(order: Int, item: SubcategoryRow)] = []
+        
+        // 加入虚拟行
+        rows.append((category.uncategorizedSortOrder, .uncategorized))
+        
+        // 加入真实分类
+        for sub in category.subcategories {
+            rows.append((sub.sortOrder, .real(sub)))
+        }
+        
+        // 统一排序
+        return rows.sorted(by: { $0.order < $1.order }).map { $0.item }
+    }
+
+    /// 计算未分类物品的数量
+    private var uncategorizedCount: Int {
+        category.items.filter { $0.subcategory == nil }.count
+    }
+
     var body: some View {
         List {
-            if !category.subcategories.isEmpty {
-                Section {
-                    ForEach(category.subcategories.sorted(by: { $0.sortOrder < $1.sortOrder })) { subcategory in
+            Section {
+                ForEach(displayRows) { row in
+                    switch row {
+                    case .uncategorized:
+                        NavigationLink(destination: UncategorizedItemsView(category: category)) {
+                            HStack {
+                                Text("未分类物品")
+                                Spacer()
+                                Text("\(uncategorizedCount)")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        // 虚拟行不提供编辑/删除 Action
+                        
+                    case .real(let subcategory):
                         NavigationLink(destination: SubcategoryItemsView(subcategory: subcategory)) {
                             HStack {
                                 Text(subcategory.name)
@@ -46,8 +99,10 @@ struct CategoryDetailView: View {
                             .tint(.orange)
                         }
                     }
-                    .onMove(perform: moveSubcategories)
                 }
+                .onMove(perform: moveRows)
+            } header: {
+                Text("二级分类")
             }
 
             // Inline add subcategory
@@ -76,7 +131,7 @@ struct CategoryDetailView: View {
 
             Section {
                 NavigationLink(destination: AllItemsInCategoryView(category: category)) {
-                    Text("显示所有 \(category.name)")
+                    Text("显示所有\(category.name)")
                         .foregroundStyle(.tint)
                 }
             }
@@ -112,7 +167,6 @@ struct CategoryDetailView: View {
             Button("取消", role: .cancel) {}
             Button("删除", role: .destructive) {
                 if let subcategory = subcategoryToDelete {
-                    // 显式从父分类的数组中移除，确保 UI 立即刷新
                     category.subcategories.removeAll { $0.id == subcategory.id }
                     modelContext.delete(subcategory)
                     try? modelContext.save()
@@ -126,7 +180,8 @@ struct CategoryDetailView: View {
     private func saveNewSubcategory() {
         let trimmed = newSubcategoryName.trimmingCharacters(in: .whitespaces)
         if !trimmed.isEmpty {
-            let subcategory = Subcategory(name: trimmed, parentCategory: category, sortOrder: category.subcategories.count)
+            let nextOrder = (category.subcategories.map { $0.sortOrder }.max() ?? 0) + 1
+            let subcategory = Subcategory(name: trimmed, parentCategory: category, sortOrder: nextOrder)
             modelContext.insert(subcategory)
             category.subcategories.append(subcategory)
         }
@@ -149,12 +204,18 @@ struct CategoryDetailView: View {
         }
     }
 
-    private func moveSubcategories(from source: IndexSet, to destination: Int) {
-        var revisedItems = category.subcategories.sorted(by: { $0.sortOrder < $1.sortOrder })
-        revisedItems.move(fromOffsets: source, toOffset: destination)
+    private func moveRows(from source: IndexSet, to destination: Int) {
+        var revisedRows = displayRows
+        revisedRows.move(fromOffsets: source, toOffset: destination)
         
-        for index in 0..<revisedItems.count {
-            revisedItems[index].sortOrder = index
+        // 重新分配序号并持久化
+        for index in 0..<revisedRows.count {
+            switch revisedRows[index] {
+            case .uncategorized:
+                category.uncategorizedSortOrder = index
+            case .real(let sub):
+                sub.sortOrder = index
+            }
         }
         try? modelContext.save()
     }

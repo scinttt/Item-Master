@@ -11,6 +11,7 @@ final class Category {
     var iconName: String? // 预留图标字段
     var isDefault: Bool
     var sortOrder: Int = 0
+    var uncategorizedSortOrder: Int = 0
 
     @Relationship(deleteRule: .cascade)
     var subcategories: [Subcategory]
@@ -24,6 +25,7 @@ final class Category {
         self.iconName = iconName
         self.isDefault = isDefault
         self.sortOrder = sortOrder
+        self.uncategorizedSortOrder = 0
         self.subcategories = []
         self.items = []
     }
