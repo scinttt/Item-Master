@@ -41,6 +41,9 @@ struct AddItemView: View {
 
     // Validation
     @State private var showValidationAlert = false
+    
+    // Focus State
+    @FocusState private var isInputActive: Bool
 
     init(initialCategory: Category? = nil, initialSubcategory: Subcategory? = nil) {
         let initialCurrency = UserDefaults.standard.string(forKey: "globalDisplayCurrency") ?? Constants.Currency.usd.rawValue
@@ -75,17 +78,28 @@ struct AddItemView: View {
                     selectedImage: $selectedImage,
                     photosPickerItem: $photosPickerItem,
                     showCamera: $showCamera,
-                    showPermissionAlert: $showPermissionAlert
+                    showPermissionAlert: $showPermissionAlert,
+                    isInputActive: $isInputActive
                 )
             }
             .navigationTitle("添加物品")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.immediately)
+            .onTapGesture {
+                isInputActive = false
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") { saveItem() }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") {
+                        isInputActive = false
+                    }
                 }
             }
             .alert("请选择分类", isPresented: $showValidationAlert) {

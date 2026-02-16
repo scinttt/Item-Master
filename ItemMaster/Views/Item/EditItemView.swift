@@ -45,6 +45,9 @@ struct EditItemView: View {
     // Validation
     @State private var showValidationAlert = false
     
+    // Focus State
+    @FocusState private var isInputActive: Bool
+    
     init(item: Item) {
         self.item = item
         _name = State(initialValue: item.name)
@@ -103,17 +106,28 @@ struct EditItemView: View {
                     selectedImage: $selectedImage,
                     photosPickerItem: $photosPickerItem,
                     showCamera: $showCamera,
-                    showPermissionAlert: $showPermissionAlert
+                    showPermissionAlert: $showPermissionAlert,
+                    isInputActive: $isInputActive
                 )
             }
             .navigationTitle("编辑物品")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.immediately)
+            .onTapGesture {
+                isInputActive = false
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") { saveItem() }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") {
+                        isInputActive = false
+                    }
                 }
             }
             .alert("请选择分类", isPresented: $showValidationAlert) {

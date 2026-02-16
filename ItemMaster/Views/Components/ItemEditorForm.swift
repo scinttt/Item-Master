@@ -35,6 +35,9 @@ struct ItemEditorForm: View {
     @Binding var showCamera: Bool
     @Binding var showPermissionAlert: Bool
     
+    // Focus State
+    @FocusState.Binding var isInputActive: Bool
+    
     // Internal state for tag adding logic (can be shared)
     private func addTag() {
         let trimmed = tagInput.trimmingCharacters(in: .whitespaces)
@@ -117,6 +120,7 @@ struct ItemEditorForm: View {
     private var basicInfoSection: some View {
         Section("基本信息") {
             TextField("名称（留空自动生成）", text: $name)
+                .focused($isInputActive)
 
             HStack {
                 Text("数量")
@@ -125,6 +129,7 @@ struct ItemEditorForm: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 80)
+                    .focused($isInputActive)
                 Stepper("", value: $quantity, in: 0...9999, step: 1)
                     .labelsHidden()
             }
@@ -136,6 +141,7 @@ struct ItemEditorForm: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 80)
+                    .focused($isInputActive)
                 
                 Picker("币种", selection: $selectedCurrency) {
                     ForEach(Constants.Currency.allCases, id: \.self) { currency in
@@ -275,6 +281,7 @@ struct ItemEditorForm: View {
             HStack {
                 TextField("输入标签", text: $tagInput)
                     .onSubmit { addTag() }
+                    .focused($isInputActive)
                 Button("添加") { addTag() }
                     .disabled(tagInput.trimmingCharacters(in: .whitespaces).isEmpty)
             }
@@ -286,6 +293,7 @@ struct ItemEditorForm: View {
         Section("备注") {
             TextField("备注信息", text: $notes, axis: .vertical)
                 .lineLimit(3...6)
+                .focused($isInputActive)
         }
     }
 }
