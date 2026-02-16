@@ -6,7 +6,7 @@ struct HomeView: View {
     @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
     @AppStorage("usdToCnyRate") var exchangeRate: Double = Constants.usdToCnyRate
     
-    @Query(sort: \Category.name) private var categories: [Category]
+    @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query(sort: \Item.createdAt, order: .reverse) private var allItems: [Item]
     @State private var searchText = ""
     @State private var isAddingCategory = false
@@ -78,6 +78,7 @@ struct HomeView: View {
                             .tint(.orange)
                         }
                     }
+                    .onMove(perform: moveCategories)
 
                     // Inline add category
                     if isAddingCategory {
@@ -177,7 +178,7 @@ struct HomeView: View {
     private func saveNewCategory() {
         let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
         if !trimmed.isEmpty {
-            let category = Category(name: trimmed)
+            let category = Category(name: trimmed, sortOrder: categories.count)
             modelContext.insert(category)
         }
         newCategoryName = ""
@@ -197,5 +198,15 @@ struct HomeView: View {
         } else {
             showDeleteConfirmAlert = true
         }
+    }
+
+    private func moveCategories(from source: IndexSet, to destination: Int) {
+        var revisedItems = categories
+        revisedItems.move(fromOffsets: source, toOffset: destination)
+        
+        for index in 0..<revisedItems.count {
+            revisedItems[index].sortOrder = index
+        }
+        try? modelContext.save()
     }
 }

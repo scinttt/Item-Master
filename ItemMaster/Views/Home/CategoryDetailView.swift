@@ -22,7 +22,7 @@ struct CategoryDetailView: View {
         List {
             if !category.subcategories.isEmpty {
                 Section {
-                    ForEach(category.subcategories) { subcategory in
+                    ForEach(category.subcategories.sorted(by: { $0.sortOrder < $1.sortOrder })) { subcategory in
                         NavigationLink(destination: SubcategoryItemsView(subcategory: subcategory)) {
                             HStack {
                                 Text(subcategory.name)
@@ -46,6 +46,7 @@ struct CategoryDetailView: View {
                             .tint(.orange)
                         }
                     }
+                    .onMove(perform: moveSubcategories)
                 }
             }
 
@@ -125,7 +126,7 @@ struct CategoryDetailView: View {
     private func saveNewSubcategory() {
         let trimmed = newSubcategoryName.trimmingCharacters(in: .whitespaces)
         if !trimmed.isEmpty {
-            let subcategory = Subcategory(name: trimmed, parentCategory: category)
+            let subcategory = Subcategory(name: trimmed, parentCategory: category, sortOrder: category.subcategories.count)
             modelContext.insert(subcategory)
             category.subcategories.append(subcategory)
         }
@@ -146,5 +147,15 @@ struct CategoryDetailView: View {
         } else {
             showDeleteConfirmAlert = true
         }
+    }
+
+    private func moveSubcategories(from source: IndexSet, to destination: Int) {
+        var revisedItems = category.subcategories.sorted(by: { $0.sortOrder < $1.sortOrder })
+        revisedItems.move(fromOffsets: source, toOffset: destination)
+        
+        for index in 0..<revisedItems.count {
+            revisedItems[index].sortOrder = index
+        }
+        try? modelContext.save()
     }
 }

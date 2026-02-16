@@ -10,6 +10,7 @@ final class Category {
     var name: String
     var iconName: String? // 预留图标字段
     var isDefault: Bool
+    var sortOrder: Int = 0
 
     @Relationship(deleteRule: .cascade)
     var subcategories: [Subcategory]
@@ -17,11 +18,12 @@ final class Category {
     @Relationship(deleteRule: .nullify)
     var items: [Item]
 
-    init(name: String, iconName: String? = nil, isDefault: Bool = false) {
+    init(name: String, iconName: String? = nil, isDefault: Bool = false, sortOrder: Int = 0) {
         self.id = UUID()
         self.name = name
         self.iconName = iconName
         self.isDefault = isDefault
+        self.sortOrder = sortOrder
         self.subcategories = []
         self.items = []
     }
@@ -35,17 +37,19 @@ final class Subcategory {
     var id: UUID
     var name: String
     var iconName: String? // 预留图标字段
+    var sortOrder: Int = 0
 
     var parentCategory: Category?
 
     @Relationship(deleteRule: .nullify)
     var items: [Item]
 
-    init(name: String, iconName: String? = nil, parentCategory: Category? = nil) {
+    init(name: String, iconName: String? = nil, parentCategory: Category? = nil, sortOrder: Int = 0) {
         self.id = UUID()
         self.name = name
         self.iconName = iconName
         self.parentCategory = parentCategory
+        self.sortOrder = sortOrder
         self.items = []
     }
 }
