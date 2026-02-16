@@ -158,6 +158,5 @@ struct CategoryDetailView: View {
             case .real(let sub): sub.sortOrder = index
             }
         }
-        try? modelContext.save()
     }
 }

@@ -153,6 +153,5 @@ struct HomeView: View {
         var revisedItems = categories
         revisedItems.move(fromOffsets: source, toOffset: destination)
         for index in 0..<revisedItems.count { revisedItems[index].sortOrder = index }
-        try? modelContext.save()
     }
 }
