@@ -53,6 +53,17 @@ struct DashboardView: View {
         chartData.reduce(0) { $0 + $1.value }
     }
     
+    private var totalCount: Double {
+        items.reduce(0) { $0 + $1.quantity }
+    }
+    
+    private var totalPrice: Double {
+        items.reduce(0) { sum, item in
+            let convertedPrice = CurrencyHelper.convert(item.unitPrice, from: item.originalCurrency, to: displayCurrency, rate: exchangeRate)
+            return sum + (convertedPrice * Double(item.quantity))
+        }
+    }
+    
     private var isSearching: Bool {
         !searchText.trimmingCharacters(in: .whitespaces).isEmpty
     }
@@ -113,54 +124,19 @@ struct DashboardView: View {
             .sheet(isPresented: $showAddItem) {
                 AddItemView()
             }
-            .alert("修改汇率", isPresented: $showRateAlert) {
-                TextField("1 USD = ? CNY", text: $rateInput)
-                    .keyboardType(.decimalPad)
-                Button("取消", role: .cancel) {}
-                Button("确定") {
-                    if let newRate = Double(rateInput), newRate > 0 {
-                        exchangeRate = newRate
-                    }
-                }
-            } message: {
-                Text("请输入 1 美元兑换人民币的汇率。")
-            }
-            .alert("重命名分类", isPresented: $showRenameAlert) {
-                TextField("新名称", text: $renameInput)
-                Button("取消", role: .cancel) {}
-                Button("保存") {
-                    if let category = categoryToRename {
-                        category.name = renameInput.trimmingCharacters(in: .whitespaces)
-                    }
-                }
-            }
-            .alert("无法删除", isPresented: $showDeleteRestrictedAlert) {
-                Button("我知道了", role: .cancel) {}
-            } message: {
-                Text("该分类下仍有物品。请先将物品清空，然后再尝试删除。")
-            }
-            .alert("确认删除", isPresented: $showDeleteConfirmAlert) {
-                Button("取消", role: .cancel) {}
-                Button("删除", role: .destructive) {
-                    if let category = categoryToDelete {
-                        modelContext.delete(category)
-                    }
-                }
-            } message: {
-                Text("您确定要删除这个空分类吗？")
-            }
-            .navigationDestination(for: Category.self) { category in
-                SubcategoryDashboardView(category: category, initialSegment: viewModel.selectedSegment)
-            }
-            .navigationDestination(for: Subcategory.self) { subcategory in
-                SubcategoryItemsView(subcategory: subcategory)
-            }
-            .navigationDestination(for: UncategorizedItemsWrapper.self) { wrapper in
-                UncategorizedItemsView(category: wrapper.category)
-            }
-            .navigationDestination(for: Item.self) { item in
-                ItemDetailView(item: item)
-            }
+            .modifier(DashboardAlertsModifier(
+                showRateAlert: $showRateAlert,
+                rateInput: $rateInput,
+                exchangeRate: $exchangeRate,
+                showRenameAlert: $showRenameAlert,
+                renameInput: $renameInput,
+                categoryToRename: categoryToRename,
+                showDeleteRestrictedAlert: $showDeleteRestrictedAlert,
+                showDeleteConfirmAlert: $showDeleteConfirmAlert,
+                categoryToDelete: categoryToDelete,
+                modelContext: modelContext
+            ))
+            .modifier(DashboardNavigationModifier(selectedSegment: viewModel.selectedSegment))
         }
     }
     
@@ -210,14 +186,18 @@ struct DashboardView: View {
                         GeometryReader { geometry in
                             let frame = geometry[chartProxy.plotAreaFrame]
                             VStack(spacing: 4) {
-                                Text(viewModel.centerTitle)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Text(viewModel.formatValue(totalValue))
-                                    .font(.title2)
-                                    .bold()
-                                    .multilineTextAlignment(.center)
+                                if viewModel.selectedSegment == 0 {
+                                    Text("\(Int(totalCount)) 个物品")
+                                        .font(.title2)
+                                        .bold()
+                                } else {
+                                    Text(CurrencyHelper.format(totalPrice, to: displayCurrency))
+                                        .font(.title2)
+                                        .bold()
+                                }
                             }
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                             .position(x: frame.midX, y: frame.midY)
                         }
                     }
@@ -335,5 +315,83 @@ struct DashboardView: View {
         for index in 0..<revisedItems.count {
             revisedItems[index].sortOrder = index
         }
+    }
+}
+
+// MARK: - Helper Modifiers
+
+private struct DashboardAlertsModifier: ViewModifier {
+    @Binding var showRateAlert: Bool
+    @Binding var rateInput: String
+    @Binding var exchangeRate: Double
+    @Binding var showRenameAlert: Bool
+    @Binding var renameInput: String
+    let categoryToRename: Category?
+    @Binding var showDeleteRestrictedAlert: Bool
+    @Binding var showDeleteConfirmAlert: Bool
+    let categoryToDelete: Category?
+    let modelContext: ModelContext
+
+    func body(content: Content) -> some View {
+        content
+            .alert("修改汇率", isPresented: $showRateAlert) {
+                TextField("1 USD = ? CNY", text: $rateInput)
+                    .keyboardType(.decimalPad)
+                Button("取消", role: .cancel) {}
+                Button("确定") {
+                    if let newRate = Double(rateInput), newRate > 0 {
+                        exchangeRate = newRate
+                    }
+                }
+            } message: {
+                Text("请输入 1 美元兑换人民币的汇率。")
+            }
+            .alert("重命名分类", isPresented: $showRenameAlert) {
+                TextField("新名称", text: $renameInput)
+                Button("取消", role: .cancel) {}
+                Button("保存") {
+                    if let category = categoryToRename {
+                        category.name = renameInput.trimmingCharacters(in: .whitespaces)
+                    }
+                }
+            }
+            .alert("无法删除", isPresented: $showDeleteRestrictedAlert) {
+                Button("我知道了", role: .cancel) {}
+            } message: {
+                Text("该分类下仍有物品。请先将物品清空，然后再尝试删除。")
+            }
+            .alert("确认删除", isPresented: $showDeleteConfirmAlert) {
+                Button("取消", role: .cancel) {}
+                Button("删除", role: .destructive) {
+                    if let category = categoryToDelete {
+                        modelContext.delete(category)
+                    }
+                }
+            } message: {
+                Text("您确定要删除这个空分类吗？")
+            }
+    }
+}
+
+private struct DashboardNavigationModifier: ViewModifier {
+    let selectedSegment: Int
+
+    func body(content: Content) -> some View {
+        content
+            .navigationDestination(for: Category.self) { category in
+                SubcategoryDashboardView(category: category, initialSegment: selectedSegment)
+            }
+            .navigationDestination(for: CategoryItemsWrapper.self) { wrapper in
+                AllItemsInCategoryView(category: wrapper.category)
+            }
+            .navigationDestination(for: Subcategory.self) { subcategory in
+                SubcategoryItemsView(subcategory: subcategory)
+            }
+            .navigationDestination(for: UncategorizedItemsWrapper.self) { wrapper in
+                UncategorizedItemsView(category: wrapper.category)
+            }
+            .navigationDestination(for: Item.self) { item in
+                ItemDetailView(item: item)
+            }
     }
 }

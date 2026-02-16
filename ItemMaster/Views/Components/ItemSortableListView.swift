@@ -120,7 +120,7 @@ private struct ItemSortableListInnerView: View {
                 ContentUnavailableView("暂无物品", systemImage: "tray")
             } else {
                 ForEach(items) { item in
-                    NavigationLink(destination: LazyView(ItemDetailView(item: item))) {
+                    NavigationLink(value: item) {
                         ItemRowView(item: item)
                     }
                 }
@@ -137,7 +137,7 @@ private struct ItemSortableListInnerView: View {
             } else {
                 LazyVGrid(columns: columns, spacing: 2) {
                     ForEach(items) { item in
-                        NavigationLink(destination: LazyView(ItemDetailView(item: item))) {
+                        NavigationLink(value: item) {
                             gridCell(for: item)
                         }
                         .buttonStyle(.plain)

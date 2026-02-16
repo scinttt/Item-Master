@@ -6,6 +6,7 @@ struct SubcategoryDashboardView: View {
     @Environment(\.modelContext) private var modelContext
     let category: Category
     @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
+    @AppStorage("usdToCnyRate") var exchangeRate: Double = Constants.usdToCnyRate
     @Query private var items: [Item]
     @State private var viewModel: DashboardViewModel
 
@@ -73,6 +74,17 @@ struct SubcategoryDashboardView: View {
     private var totalValue: Double {
         chartData.reduce(0) { $0 + $1.value }
     }
+    
+    private var totalCount: Double {
+        items.reduce(0) { $0 + $1.quantity }
+    }
+    
+    private var totalPrice: Double {
+        items.reduce(0) { sum, item in
+            let convertedPrice = CurrencyHelper.convert(item.unitPrice, from: item.originalCurrency, to: displayCurrency, rate: exchangeRate)
+            return sum + (convertedPrice * Double(item.quantity))
+        }
+    }
 
     var body: some View {
         List {
@@ -120,14 +132,30 @@ struct SubcategoryDashboardView: View {
                         .chartBackground { chartProxy in
                             GeometryReader { geometry in
                                 let frame = geometry[chartProxy.plotAreaFrame]
-                                VStack(spacing: 0) {
-                                    Text(viewModel.selectedSegment == 0 ? "总量" : "总价")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Text(viewModel.formatValue(totalValue))
-                                        .font(.headline)
-                                        .bold()
+                                // 中心点击区域：使用 NavigationLink 进行值导航
+                                NavigationLink(value: CategoryItemsWrapper(category: category)) {
+                                    VStack(spacing: 4) {
+                                        if viewModel.selectedSegment == 0 {
+                                            Text("\(Int(totalCount)) 个物品")
+                                                .font(.headline)
+                                                .bold()
+                                                .foregroundStyle(.primary)
+                                        } else {
+                                            Text(CurrencyHelper.format(totalPrice, to: displayCurrency))
+                                                .font(.headline)
+                                                .bold()
+                                                .foregroundStyle(.primary)
+                                        }
+                                    }
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(.plain)
+                                .frame(width: frame.width * 0.5, height: frame.height * 0.5)
+                                .background(Color.black.opacity(0.001))
+                                .clipShape(Circle())
+                                .zIndex(1)
                                 .position(x: frame.midX, y: frame.midY)
                             }
                         }
@@ -205,11 +233,11 @@ struct SubcategoryDashboardView: View {
                         .onSubmit {
                             saveNewSubcategory()
                         }
-                                            .onChange(of: isTextFieldFocused) { _, isFocused in
-                                                if !isFocused && isAddingSubcategory {
-                                                    saveNewSubcategory()
-                                                }
-                                            }
+                        .onChange(of: isTextFieldFocused) { _, isFocused in
+                            if !isFocused && isAddingSubcategory {
+                                saveNewSubcategory()
+                            }
+                        }
                         
                 } else {
                     Button {
@@ -259,15 +287,6 @@ struct SubcategoryDashboardView: View {
             }
         } message: {
             Text("您确定要删除这个空二级分类吗？")
-        }
-        .navigationDestination(for: Subcategory.self) { subcategory in
-            SubcategoryItemsView(subcategory: subcategory)
-        }
-        .navigationDestination(for: UncategorizedItemsWrapper.self) { wrapper in
-            UncategorizedItemsView(category: wrapper.category)
-        }
-        .navigationDestination(for: Item.self) { item in
-            ItemDetailView(item: item)
         }
     }
 
