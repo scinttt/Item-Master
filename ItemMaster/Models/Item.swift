@@ -23,6 +23,9 @@ final class Item: Hashable {
     // 价格
     var unitPrice: Double?
     var originalCurrency: String
+    
+    // 排序用：归一化价格（以 USD 为基准，仅在保存时更新）
+    var normalizedPrice: Double = 0.0
 
     // 预留元数据
     var brand: String?   // 品牌

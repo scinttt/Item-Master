@@ -8,6 +8,7 @@ struct AddItemView: View {
 
     // MARK: - Form State
     @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
+    @AppStorage("usdToCnyRate") var exchangeRate: Double = Constants.usdToCnyRate
     @State private var name = ""
     @State private var quantity: Double = 1.0
     @State private var unit = "个"
@@ -158,6 +159,9 @@ struct AddItemView: View {
                 tags.append(newTag)
             }
         }
+        
+        let price = Double(unitPriceString)
+        let normalized = CurrencyHelper.convert(price, from: selectedCurrency.rawValue, to: Constants.Currency.usd.rawValue, rate: exchangeRate)
 
         let item = Item(
             name: name,
@@ -167,7 +171,7 @@ struct AddItemView: View {
             sublocation: selectedSublocation,
             quantity: quantity,
             unit: unit,
-            unitPrice: Double(unitPriceString),
+            unitPrice: price,
             originalCurrency: selectedCurrency.rawValue,
             acquiredDate: showAcquiredDate ? (acquiredDate ?? Date()) : nil,
             expiryDate: showExpiryDate ? (expiryDate ?? Date()) : nil,
@@ -177,6 +181,7 @@ struct AddItemView: View {
             notes: notes.isEmpty ? nil : notes,
             tags: tags
         )
+        item.normalizedPrice = normalized
 
         modelContext.insert(item)
         category.items.append(item)

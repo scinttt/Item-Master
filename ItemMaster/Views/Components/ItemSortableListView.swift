@@ -68,7 +68,7 @@ private struct ItemSortableListInnerView: View {
             // 之前的内存排序逻辑是将 nil 放在最后（ascending时）。
             descriptors = [SortDescriptor(\Item.expiryDate, order: order), SortDescriptor(\Item.createdAt, order: .reverse)]
         case .unitPrice:
-            descriptors = [SortDescriptor(\Item.unitPrice, order: order)]
+            descriptors = [SortDescriptor(\Item.normalizedPrice, order: order)]
         case .acquiredDate:
             descriptors = [SortDescriptor(\Item.acquiredDate, order: order)]
         case .quantity:

@@ -26,6 +26,7 @@ struct ItemMasterApp: App {
             ContentView()
                 .onAppear {
                     seedDefaultDataIfNeeded()
+                    patchLegacyItemsIfNeeded()
                     // 打印 Documents 文件夹的本地物理路径
                     print("📁 沙盒路径: \(URL.documentsDirectory.path())")
                 }
@@ -65,6 +66,35 @@ struct ItemMasterApp: App {
             seedSamples(context: context)
             UserDefaults.standard.set(true, forKey: sampleSeedKey)
             try? context.save()
+        }
+    }
+    
+    /// 数据修补：将旧数据的价格转换为归一化价格 (normalizedPrice)
+    private func patchLegacyItemsIfNeeded() {
+        let context = sharedModelContainer.mainContext
+        let rate = UserDefaults.standard.double(forKey: "usdToCnyRate")
+        let effectiveRate = rate > 0 ? rate : Constants.usdToCnyRate
+        
+        // 查找所有价格 > 0 但 normalizedPrice 为 0 的物品（假设 0 为未处理）
+        // 注意：如果原价本身就是 0，normalizedPrice 也是 0，这部分不需要修补
+        // 但为了保险，我们可以重新计算所有物品
+        let descriptor = FetchDescriptor<Item>()
+        if let items = try? context.fetch(descriptor) {
+            var updatedCount = 0
+            for item in items {
+                // 如果 normalizedPrice 还是默认值 0，且 unitPrice 有值，则进行修补
+                // 或者我们可以强制刷新一遍，确保汇率变动后的准确性（虽然这里主要是为了迁移）
+                if item.normalizedPrice == 0.0, let price = item.unitPrice, price > 0 {
+                    let normalized = CurrencyHelper.convert(price, from: item.originalCurrency, to: Constants.Currency.usd.rawValue, rate: effectiveRate)
+                    item.normalizedPrice = normalized
+                    updatedCount += 1
+                }
+            }
+            
+            if updatedCount > 0 {
+                try? context.save()
+                print("🛠️ 已修补 \(updatedCount) 个物品的归一化价格")
+            }
         }
     }
     

@@ -10,6 +10,7 @@ struct EditItemView: View {
     
     // MARK: - Form State
     @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
+    @AppStorage("usdToCnyRate") var exchangeRate: Double = Constants.usdToCnyRate
     @State private var name: String
     @State private var quantity: Double
     @State private var unit: String
@@ -234,6 +235,12 @@ struct EditItemView: View {
         item.unit = unit
         item.unitPrice = Double(unitPriceString)
         item.originalCurrency = selectedCurrency.rawValue
+        
+        // Calculate and save normalized price
+        let price = Double(unitPriceString)
+        let normalized = CurrencyHelper.convert(price, from: selectedCurrency.rawValue, to: Constants.Currency.usd.rawValue, rate: exchangeRate)
+        item.normalizedPrice = normalized
+        
         item.acquiredDate = showAcquiredDate ? (acquiredDate ?? Date()) : nil
         item.expiryDate = showExpiryDate ? (expiryDate ?? Date()) : nil
         item.shelfLifeDays = Int(shelfLifeDaysString)
