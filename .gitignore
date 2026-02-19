@@ -3,3 +3,7 @@ Constant.swift
 Models.swift
 Documentation/
 MEMORY.md
+
+# Secrets
+.env
+ItemMaster/Resources/Secrets.plist

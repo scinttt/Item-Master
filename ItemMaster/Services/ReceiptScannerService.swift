@@ -82,8 +82,7 @@ final class ReceiptScannerService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // TODO: Replace with your actual OpenAI API Key
-        request.setValue("Bearer YOUR_API_KEY_HERE", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(EnvHelper.openAIAPIKey)", forHTTPHeaderField: "Authorization")
         
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         
