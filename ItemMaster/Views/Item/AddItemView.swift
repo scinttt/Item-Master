@@ -55,6 +55,9 @@ struct AddItemView: View {
     // Validation
     @State private var showValidationAlert = false
     
+    // Calculator
+    @State private var showCalculator = false
+    
     // Focus State
     @FocusState private var isInputActive: Bool
 
@@ -107,6 +110,7 @@ struct AddItemView: View {
                     photosPickerItem: $photosPickerItem,
                     showCamera: $showCamera,
                     showPermissionAlert: $showPermissionAlert,
+                    showCalculator: $showCalculator,
                     isInputActive: $isInputActive
                 )
             }
@@ -126,7 +130,19 @@ struct AddItemView: View {
                  .padding()
                  .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray).opacity(0.9)))
             }
-        }
+            
+            if showCalculator {
+                Color.black.opacity(0.2)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation {
+                            showCalculator = false
+                        }
+                    }
+                
+                CalculatorView(text: $unitPriceString, isPresented: $showCalculator)
+            }
+         }
         .navigationTitle("添加物品")
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.immediately)

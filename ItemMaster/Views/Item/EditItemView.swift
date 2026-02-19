@@ -46,6 +46,9 @@ struct EditItemView: View {
     // Validation
     @State private var showValidationAlert = false
     
+    // Calculator
+    @State private var showCalculator = false
+    
     // Focus State
     @FocusState private var isInputActive: Bool
     
@@ -84,19 +87,20 @@ struct EditItemView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                ItemEditorForm(
-                    name: $name,
-                    quantity: $quantity,
-                    unit: $unit,
-                    unitPriceString: $unitPriceString,
-                    selectedCurrency: $selectedCurrency,
-                    selectedCategory: $selectedCategory,
-                    selectedSubcategory: $selectedSubcategory,
-                    selectedLocation: $selectedLocation,
-                    selectedSublocation: $selectedSublocation,
-                    showAcquiredDate: $showAcquiredDate,
-                    acquiredDate: $acquiredDate,
+            ZStack {
+                Form {
+                    ItemEditorForm(
+                        name: $name,
+                        quantity: $quantity,
+                        unit: $unit,
+                        unitPriceString: $unitPriceString,
+                        selectedCurrency: $selectedCurrency,
+                        selectedCategory: $selectedCategory,
+                        selectedSubcategory: $selectedSubcategory,
+                        selectedLocation: $selectedLocation,
+                        selectedSublocation: $selectedSublocation,
+                        showAcquiredDate: $showAcquiredDate,
+                        acquiredDate: $acquiredDate,
                     showExpiryDate: $showExpiryDate,
                     expiryDate: $expiryDate,
                     shelfLifeDaysString: $shelfLifeDaysString,
@@ -108,10 +112,24 @@ struct EditItemView: View {
                     photosPickerItem: $photosPickerItem,
                     showCamera: $showCamera,
                     showPermissionAlert: $showPermissionAlert,
+                    showCalculator: $showCalculator,
                     isInputActive: $isInputActive
                 )
             }
-            .navigationTitle("编辑物品")
+            
+            if showCalculator {
+                Color.black.opacity(0.2)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation {
+                            showCalculator = false
+                        }
+                    }
+                
+                CalculatorView(text: $unitPriceString, isPresented: $showCalculator)
+            }
+        }
+        .navigationTitle("编辑物品")
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.immediately)
             .toolbar {

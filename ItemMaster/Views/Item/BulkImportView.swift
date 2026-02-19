@@ -146,25 +146,24 @@ struct BulkImportItemRow: View {
                         .font(.headline)
                     
                     HStack {
-                        Text(Constants.Currency(rawValue: UserDefaults.standard.string(forKey: "globalDisplayCurrency") ?? "USD")?.symbol ?? "$")
-                        TextField("价格", text: Binding(
-                            get: { item.unitPriceString },
-                            set: { item.unitPriceString = $0 }
-                        ))
-                            .keyboardType(.decimalPad)
-                            .frame(width: 80)
-                        
-                        Text("×")
-                        
-                        TextField("数量", value: Binding(
-                            get: { item.quantity },
-                            set: { item.quantity = $0 }
-                        ), format: .number)
-                            .keyboardType(.decimalPad)
-                            .frame(width: 50)
-                        
-                        Text(item.unit)
-                    }
+                         Text(Constants.Currency(rawValue: UserDefaults.standard.string(forKey: "globalDisplayCurrency") ?? "USD")?.symbol ?? "$")
+                         InlineCalculatorField(text: Binding(
+                             get: { item.unitPriceString },
+                             set: { item.unitPriceString = $0 }
+                         ))
+                         .frame(width: 100)
+                         
+                         Text("×")
+                         
+                         TextField("数量", value: Binding(
+                             get: { item.quantity },
+                             set: { item.quantity = $0 }
+                         ), format: .number)
+                             .keyboardType(.decimalPad)
+                             .frame(width: 50)
+                         
+                         Text(item.unit)
+                     }
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 }

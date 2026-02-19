@@ -137,6 +137,9 @@ struct ItemEditorForm: View {
     @Binding var showCamera: Bool
     @Binding var showPermissionAlert: Bool
     
+    // Calculator State
+    @Binding var showCalculator: Bool
+    
     // Focus State
     @FocusState.Binding var isInputActive: Bool
     
@@ -205,22 +208,20 @@ struct ItemEditorForm: View {
                     .labelsHidden()
             }
 
-            HStack {
-                Text("单价")
-                Spacer()
-                TextField("可选", text: $unitPriceString)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 80)
-                    .focused($isInputActive)
-                
-                Picker("币种", selection: $selectedCurrency) {
-                    ForEach(Constants.Currency.allCases, id: \.self) { currency in
-                        Text(currency.rawValue).tag(currency)
+            VStack(spacing: 0) {
+                HStack {
+                    Text("单价")
+                    Spacer()
+                    PriceCalculatorField(text: $unitPriceString, isCalculatorPresented: $showCalculator)
+                    
+                    Picker("币种", selection: $selectedCurrency) {
+                        ForEach(Constants.Currency.allCases, id: \.self) { currency in
+                            Text(currency.rawValue).tag(currency)
+                        }
                     }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
                 }
-                .pickerStyle(.menu)
-                .labelsHidden()
             }
         }
     }
