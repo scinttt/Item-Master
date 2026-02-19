@@ -5,6 +5,9 @@ import PhotosUI
 struct AddItemView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    
+    // MARK: - Data
+    @Query(sort: \Category.sortOrder) private var allCategories: [Category]
 
     // MARK: - Form State
     @AppStorage("globalDisplayCurrency") var displayCurrency: String = Constants.Currency.usd.rawValue
@@ -35,6 +38,15 @@ struct AddItemView: View {
     @State private var photosPickerItem: PhotosPickerItem?
     @State private var showCamera = false
     @State private var showPermissionAlert = false
+    
+    // Receipt Scanning
+    @State private var receiptPickerItem: PhotosPickerItem?
+    @State private var isAnalyzingReceipt = false
+    @State private var showScanError = false
+    @State private var scanErrorMessage = ""
+    @State private var showBulkImport = false
+    @State private var parsedReceipts: [ParsedReceipt] = []
+    @State private var scannedImage: UIImage?
 
     // Date toggles
     @State private var showAcquiredDate = false
@@ -56,8 +68,23 @@ struct AddItemView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                ItemEditorForm(
+            ZStack {
+                Form {
+                    Section {
+                        PhotosPicker(selection: $receiptPickerItem, matching: .images) {
+                            HStack {
+                                Image(systemName: "doc.text.viewfinder")
+                                    .font(.title2)
+                                Text("智能扫描订单提取信息")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .foregroundColor(.accentColor)
+                        }
+                    }
+
+                    ItemEditorForm(
                     name: $name,
                     quantity: $quantity,
                     unit: $unit,
@@ -83,7 +110,24 @@ struct AddItemView: View {
                     isInputActive: $isInputActive
                 )
             }
-            .navigationTitle("添加物品")
+            .disabled(isAnalyzingReceipt)
+            
+            if isAnalyzingReceipt {
+                 Color.black.opacity(0.4)
+                     .ignoresSafeArea()
+                 VStack(spacing: 20) {
+                     ProgressView()
+                         .scaleEffect(1.5)
+                         .tint(.white)
+                     Text("AI 正在解析订单并匹配分类...")
+                         .font(.headline)
+                         .foregroundColor(.white)
+                 }
+                 .padding()
+                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray).opacity(0.9)))
+            }
+        }
+        .navigationTitle("添加物品")
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.immediately)
             .toolbar {
@@ -123,6 +167,92 @@ struct AddItemView: View {
             }
             .onChange(of: selectedCategory) {
                 selectedSubcategory = nil
+            }
+            .onChange(of: receiptPickerItem) {
+                processReceipt()
+            }
+            .alert("识别失败", isPresented: $showScanError) {
+                Button("好", role: .cancel) { }
+            } message: {
+                Text(scanErrorMessage)
+            }
+            .sheet(isPresented: $showBulkImport) {
+                BulkImportView(
+                    parsedReceipts: parsedReceipts,
+                    categories: allCategories,
+                    originalImage: scannedImage
+                )
+            }
+        }
+    }
+    
+    // MARK: - Receipt Scanning Logic
+    private func processReceipt() {
+        guard let item = receiptPickerItem else { return }
+        isAnalyzingReceipt = true
+        
+        let contextString = allCategories.map { category in
+            let subNames = category.subcategories.map { $0.name }.joined(separator: ", ")
+            return "\(category.name) (Subcategories: [\(subNames)])"
+        }.joined(separator: "; ")
+        
+        Task {
+            do {
+                guard let data = try? await item.loadTransferable(type: Data.self),
+                      let image = UIImage(data: data) else {
+                    throw ReceiptScannerError.imageProcessingFailed
+                }
+                
+                let parsedItems = try await ReceiptScannerService.shared.parseReceipt(image: image, categoryContext: contextString)
+                
+                await MainActor.run {
+                    withAnimation {
+                        isAnalyzingReceipt = false
+                        receiptPickerItem = nil
+                        
+                        if parsedItems.count == 1 {
+                            populateForm(with: parsedItems[0])
+                        } else if parsedItems.count > 1 {
+                            parsedReceipts = parsedItems
+                            scannedImage = image
+                            showBulkImport = true
+                        }
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isAnalyzingReceipt = false
+                    scanErrorMessage = error.localizedDescription
+                    showScanError = true
+                    receiptPickerItem = nil
+                }
+            }
+        }
+    }
+    
+    private func populateForm(with parsed: ParsedReceipt) {
+        if let name = parsed.name, !name.isEmpty { self.name = name }
+        if let price = parsed.unitPriceString { self.unitPriceString = price }
+        if let qty = parsed.quantity { self.quantity = qty }
+        if let tags = parsed.tagNames { self.tagNames = tags }
+        if let notes = parsed.notes { self.notes = notes }
+        
+        if let dateString = parsed.acquiredDateString {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            if let date = formatter.date(from: dateString) {
+                self.acquiredDate = date
+                self.showAcquiredDate = true
+            }
+        }
+        
+        if let catName = parsed.matchedCategoryName {
+            if let match = allCategories.first(where: { $0.name == catName }) {
+                self.selectedCategory = match
+                
+                if let subName = parsed.matchedSubcategoryName {
+                    self.selectedSubcategory = match.subcategories.first(where: { $0.name == subName })
+                }
             }
         }
     }
